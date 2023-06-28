@@ -1,52 +1,83 @@
 """Osprey Client API."""
 import requests
-import pickle
-import os
+import sys, argparse
+import json
 
-from proxystore.proxy import Proxy
-from proxystore.store import Store
-from proxystore.connectors.file import FileConnector
-from proxystore.connectors.file import FileKey
+SERVER_ADDRESS = '192.5.87.183:5001'
+SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
 
 
-server_url = "http://localhost:5001/osprey/api/v1.0/proxies"
-store: Store = Store(name="osprey_data_store", connector=FileConnector(store_dir='databases'))
-
-
-def all_proxies() -> dict[str, list[Proxy]]:
-    """Get the dictionary of all the proxied data.
+def all_sources() -> None:
+    """Get the dictionary of all the sources.
 
     Returns:
-        a dictionary containing all available proxied data
+        a list containing all available sources data
     """
-    req = requests.get(server_url, 'data')
-    pickle.loads(req.content)
+    req = requests.get(f'{SERVER_URL}/source')
+    resp = json.loads(req.content)
+    print(json.dumps(resp, indent=4))
 
-
-def get_proxy(name: str) -> Proxy:
-    """Get proxy by data name.
-
-    Args:
-        name (str) : the name of the data to retrieve
+def all_proxies() -> None:
+    """Get the dictionary of all the sources.
 
     Returns:
-        A proxy object of the data
+        a list containing all available sources data
     """
-    url = os.path.join(server_url, 'data')
-    req = requests.get(url, data=name)
-    key = eval(pickle.loads(req.content))
-    proxy = store.proxy_from_key(key)
-    return proxy
+    req = requests.get(f'{SERVER_URL}/proxies')
+    resp = json.loads(req.content)
+    print(json.dumps(resp, indent=4))
 
-def get_metadata(name: str) -> list[dict]:
-    """Get table's metadata.
+def create_source(name: str, url: str, timer: int = None, description: str = None, verifier: str = None) -> None:
+    data = {'name': name, 'url': url}
+    if timer is not None:
+        data['timer'] = timer
+    if description is not None:
+        data['description'] = description
+    if verifier is not None:
+        data['verifier'] = verifier
+    req = requests.post(f'{SERVER_URL}/source', json=data)
+    print(json.loads(req.content))
 
-    Args:
-        name (str) : the name of the data to retrieve
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Osprey client to create sources',
+    )
 
-    Returns:
-        The metadata of the table
-    """
-    url = os.path.join(server_url, 'metadata')
-    req = requests.get(url, data=name)
-    return pickle.loads(req.content)
+    command_group = parser.add_mutually_exclusive_group(required=True)
+    command_group.add_argument('-list_sources', action='store_true')
+    command_group.add_argument('-list_proxies',  action='store_true')
+    command_group.add_argument('-create_source',  action='store_true')
+    parser.add_argument(
+            '-n',
+            '--name',
+            required='-create_source' in sys.argv,
+            help='Name for the source',
+        )
+    parser.add_argument(
+        '-u',
+        '--url',
+        required='-create_source' in sys.argv,
+        help='url for the source',
+    )
+    parser.add_argument(
+        '-t',
+        '--timer',
+        help='timer (in s) how often to refresh source',
+    )
+    parser.add_argument(
+        '-d',
+        '--description',
+        help='description for the source',
+    )
+    parser.add_argument(
+        '-v',
+        '--verifier',
+        help='pickled function that is used to verify the validity of the new version of source',
+    )
+    args = parser.parse_args()
+    if args.list_sources:
+        all_sources()
+    elif args.list_proxies:
+        all_proxies()
+    elif args.create_source:
+        create_source(name=args.name, url=args.url, timer=args.timer, description=args.description, verifier=args.verifier)
