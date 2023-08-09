@@ -3,7 +3,7 @@ import requests
 import sys, argparse
 import json
 
-SERVER_ADDRESS = '192.5.87.183:5001'
+SERVER_ADDRESS = '127.0.0.1:5001'
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
 
 
@@ -27,7 +27,7 @@ def all_proxies() -> None:
     resp = json.loads(req.content)
     print(json.dumps(resp, indent=4))
 
-def create_source(name: str, url: str, timer: int = None, description: str = None, verifier: str = None) -> None:
+def create_source(name: str, url: str, timer: int = None, description: str = None, verifier: str = None, modifier: str = None) -> None:
     data = {'name': name, 'url': url}
     if timer is not None:
         data['timer'] = timer
@@ -35,6 +35,8 @@ def create_source(name: str, url: str, timer: int = None, description: str = Non
         data['description'] = description
     if verifier is not None:
         data['verifier'] = verifier
+    if modifier is not None:
+        data['modifier'] = modifier
     req = requests.post(f'{SERVER_URL}/source', json=data)
     print(json.loads(req.content))
 
@@ -72,7 +74,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '-v',
         '--verifier',
-        help='pickled function that is used to verify the validity of the new version of source',
+        help='globus-compute function uuid for the verifier',
+    )
+    parser.add_argument(
+        '-m',
+        '--modifier',
+        help='globus-compute function uuid for the modifier',
     )
     args = parser.parse_args()
     if args.list_sources:
@@ -80,4 +87,9 @@ if __name__ == '__main__':
     elif args.list_proxies:
         all_proxies()
     elif args.create_source:
-        create_source(name=args.name, url=args.url, timer=args.timer, description=args.description, verifier=args.verifier)
+        create_source(name=args.name,
+                    url=args.url,
+                    timer=args.timer,
+                    description=args.description,
+                    verifier=args.verifier,
+                    modifier=args.modifier)
