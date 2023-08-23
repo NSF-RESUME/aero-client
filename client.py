@@ -1,6 +1,8 @@
 """Osprey Client API."""
 import requests
-import sys, argparse
+from io import StringIO
+import pandas as pd
+import sys, argparse, csv, json
 import json
 
 SERVER_ADDRESS = '127.0.0.1:5001'
@@ -27,6 +29,25 @@ def all_proxies() -> None:
     resp = json.loads(req.content)
     print(json.dumps(resp, indent=4))
 
+def get_file(source_id: str, version: str) -> None:
+    """Gets the version for the source.
+
+    Returns:
+        prints the file
+    """
+    params = {}
+    if version is not None:
+        params['version'] = version
+    resp = requests.get(f'{SERVER_URL}/source/{source_id}/file', params=params)
+    return resp.json()
+
+def source_file(source_id, version = None):
+    response = get_file(source_id, version)
+    if(response['file_type'] == 'json'):
+        return json.loads(response['file'])
+    if(response['file_type'] == 'csv' or response['file_type'] is None):
+        return pd.read_csv(StringIO(response['file']))
+
 def create_source(name: str, url: str, timer: int = None, description: str = None, verifier: str = None, modifier: str = None) -> None:
     data = {'name': name, 'url': url}
     if timer is not None:
@@ -49,6 +70,7 @@ if __name__ == '__main__':
     command_group.add_argument('-list_sources', action='store_true')
     command_group.add_argument('-list_proxies',  action='store_true')
     command_group.add_argument('-create_source',  action='store_true')
+    command_group.add_argument('-get_file',  action='store_true')
     parser.add_argument(
             '-n',
             '--name',
@@ -60,6 +82,17 @@ if __name__ == '__main__':
         '--url',
         required='-create_source' in sys.argv,
         help='url for the source',
+    )
+    parser.add_argument(
+        '-s_id',
+        '--source_id',
+        required='-get_file' in sys.argv,
+        help='source id for the source',
+    )
+    parser.add_argument(
+        '-ver',
+        '--version',
+        help='version for the source',
     )
     parser.add_argument(
         '-t',
@@ -93,3 +126,6 @@ if __name__ == '__main__':
                     description=args.description,
                     verifier=args.verifier,
                     modifier=args.modifier)
+    elif args.get_file:
+        print(get_file(source_id=args.source_id,
+                 version=args.version))
