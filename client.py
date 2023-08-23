@@ -5,9 +5,18 @@ import pandas as pd
 import sys, argparse, csv, json
 import json
 
+# SERVER_ADDRESS = '192.5.87.198:5001'
 SERVER_ADDRESS = '127.0.0.1:5001'
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
 
+class ClientError(Exception):
+    def __init__(self, *args: object, **kwargs) -> None:
+        self.code = kwargs.get('code', 500)
+        self.message = kwargs.get('message', 'Unexpected error')
+        super().__init__(*args)
+    
+    def __repr__(self) -> str:
+        return f"ClientError Code ({self.code}) : {self.message}"
 
 def all_sources() -> None:
     """Get the dictionary of all the sources.
@@ -39,7 +48,11 @@ def get_file(source_id: str, version: str) -> None:
     if version is not None:
         params['version'] = version
     resp = requests.get(f'{SERVER_URL}/source/{source_id}/file', params=params)
-    return resp.json()
+    if resp.status_code == 200:
+        return resp.json()
+    else:
+        resp = resp.json()
+        raise ClientError(resp['status'], resp['message'])
 
 def source_file(source_id, version = None):
     response = get_file(source_id, version)
@@ -127,5 +140,8 @@ if __name__ == '__main__':
                     verifier=args.verifier,
                     modifier=args.modifier)
     elif args.get_file:
-        print(get_file(source_id=args.source_id,
-                 version=args.version))
+        try:
+            file = source_file(source_id=args.source_id, version=args.version)
+            print(file.head(5))
+        except ClientError as e:
+            print(e)
