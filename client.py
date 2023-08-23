@@ -5,8 +5,7 @@ import pandas as pd
 import sys, argparse, csv, json
 import json
 
-# SERVER_ADDRESS = '192.5.87.198:5001'
-SERVER_ADDRESS = '127.0.0.1:5001'
+SERVER_ADDRESS = '192.5.87.198:5001'
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
 
 class ClientError(Exception):
@@ -51,8 +50,8 @@ def get_file(source_id: str, version: str) -> None:
     if resp.status_code == 200:
         return resp.json()
     else:
-        resp = resp.json()
-        raise ClientError(resp['status'], resp['message'])
+        response = resp.json()
+        raise ClientError(response.get('status', resp.status_code), response['message'])
 
 def source_file(source_id, version = None):
     response = get_file(source_id, version)
