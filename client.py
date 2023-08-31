@@ -2,10 +2,11 @@
 import requests
 from io import StringIO
 import pandas as pd
-import sys, argparse, csv, json
-import json
+import sys, argparse, json
+from osprey.server.lib.serializer import serialize
 
 SERVER_ADDRESS = '192.5.87.198:5001'
+# SERVER_ADDRESS = '127.0.0.1:5001'
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
 
 class ClientError(Exception):
@@ -16,6 +17,11 @@ class ClientError(Exception):
     
     def __repr__(self) -> str:
         return f"ClientError Code ({self.code}) : {self.message}"
+
+def register_function(func):
+    pickled_function = serialize(func)
+    res = requests.get(f'{SERVER_URL}/function', params={'function': pickled_function})
+    return res.json()
 
 def all_sources() -> None:
     """Get the dictionary of all the sources.
