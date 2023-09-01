@@ -5,7 +5,7 @@ import pandas as pd
 import sys, argparse, json
 from osprey.server.lib.serializer import serialize
 
-SERVER_ADDRESS = '192.5.87.198:5001'
+SERVER_ADDRESS = '192.5.87.217:5001'
 # SERVER_ADDRESS = '127.0.0.1:5001'
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
 
