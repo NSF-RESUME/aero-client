@@ -6,6 +6,7 @@ import sys, argparse, json
 from osprey.server.lib.serializer import serialize
 
 SERVER_ADDRESS = '192.5.87.217:5001'
+# SERVER_ADDRESS = 'osprey-web-1'
 # SERVER_ADDRESS = '127.0.0.1:5001'
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
 
@@ -77,7 +78,9 @@ def create_source(name: str, url: str, timer: int = None, description: str = Non
     if modifier is not None:
         data['modifier'] = modifier
     req = requests.post(f'{SERVER_URL}/source', json=data)
-    print(json.loads(req.content))
+    res = json.loads(req.content)
+    print(res)
+    return res
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
