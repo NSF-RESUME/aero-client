@@ -5,7 +5,7 @@ import pandas as pd
 import sys, argparse, json
 from osprey.server.lib.serializer import serialize
 
-SERVER_ADDRESS = '192.5.87.217:5001'
+SERVER_ADDRESS = '129.114.27.115:5001'
 # SERVER_ADDRESS = 'osprey-web-1'
 # SERVER_ADDRESS = '127.0.0.1:5001'
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
@@ -82,7 +82,7 @@ def create_source(name: str, url: str, timer: int = None, description: str = Non
     print(res)
     return res
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description='Osprey client to create sources',
     )
@@ -153,3 +153,7 @@ if __name__ == '__main__':
             print(file.head(5))
         except ClientError as e:
             print(e)
+    
+
+if __name__ == '__main__':
+    main()
