@@ -5,12 +5,11 @@ import pandas as pd
 import sys, argparse, json, os
 from osprey.server.lib.serializer import serialize
 
-if os.environ('DSAAS_SERVER') is not None:
-    SERVER_ADDRESS = os.environ('DSAAS_SERVER')
-else:
+SERVER_ADDRESS = os.getenv('DSAAS_SERVER')
+
+if SERVER_ADDRESS is None:
     SERVER_ADDRESS = '129.114.27.115:5001'
-# SERVER_ADDRESS = 'osprey-web-1'
-# SERVER_ADDRESS = '127.0.0.1:5001'
+
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
 
 class ClientError(Exception):
@@ -27,7 +26,7 @@ def register_function(func):
     res = requests.get(f'{SERVER_URL}/function', params={'function': pickled_function})
     return res.json()
 
-def all_sources() -> None:
+def all_sources() -> list[dict[str, str | int]]:
     """Get the dictionary of all the sources.
 
     Returns:
@@ -35,7 +34,7 @@ def all_sources() -> None:
     """
     req = requests.get(f'{SERVER_URL}/source')
     resp = json.loads(req.content)
-    print(json.dumps(resp, indent=4))
+    return resp
 
 def all_proxies() -> None:
     """Get the dictionary of all the sources.
@@ -140,9 +139,9 @@ def main():
     )
     args = parser.parse_args()
     if args.list_sources:
-        all_sources()
+        print(json.dumps(all_sources(), indent=4))
     elif args.list_proxies:
-        all_proxies()
+        print(json.dumps(all_proxies(), indent=4))
     elif args.create_source:
         create_source(name=args.name,
                     url=args.url,
