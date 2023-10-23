@@ -2,10 +2,13 @@
 import requests
 from io import StringIO
 import pandas as pd
-import sys, argparse, json
+import sys, argparse, json, os
 from osprey.server.lib.serializer import serialize
 
-SERVER_ADDRESS = '129.114.27.115:5001'
+if os.environ('DSAAS_SERVER') is not None:
+    SERVER_ADDRESS = os.environ('DSAAS_SERVER')
+else:
+    SERVER_ADDRESS = '129.114.27.115:5001'
 # SERVER_ADDRESS = 'osprey-web-1'
 # SERVER_ADDRESS = '127.0.0.1:5001'
 SERVER_URL = f"http://{SERVER_ADDRESS}/osprey/api/v1.0/"
