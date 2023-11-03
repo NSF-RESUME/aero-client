@@ -69,7 +69,7 @@ def source_file(source_id, version = None):
     if(response['file_type'] == 'csv' or response['file_type'] is None):
         return pd.read_csv(StringIO(response['file']))
 
-def create_source(name: str, url: str, timer: int = None, description: str = None, verifier: str = None, modifier: str = None) -> None:
+def create_source(name: str, url: str, timer: int = None, description: str = None, verifier: str = None, email: str = None, modifier: str = None) -> None:
     data = {'name': name, 'url': url}
     if timer is not None:
         data['timer'] = timer
@@ -79,6 +79,11 @@ def create_source(name: str, url: str, timer: int = None, description: str = Non
         data['verifier'] = verifier
     if modifier is not None:
         data['modifier'] = modifier
+    if email is not None:
+        data['email'] = email
+    else:
+        data['email'] = '' # todo make email optional
+
     req = requests.post(f'{SERVER_URL}/source', json=data)
     res = json.loads(req.content)
     print(res)
@@ -137,6 +142,11 @@ def main():
         '--modifier',
         help='globus-compute function uuid for the modifier',
     )
+    parser.add_argument(
+        '-e',
+        '--email',
+        help='email address to send notifications to in case of failure'
+    )
     args = parser.parse_args()
     if args.list_sources:
         print(json.dumps(all_sources(), indent=4))
@@ -148,7 +158,9 @@ def main():
                     timer=args.timer,
                     description=args.description,
                     verifier=args.verifier,
-                    modifier=args.modifier)
+                    modifier=args.modifier,
+                    emai=args.email
+                    )
     elif args.get_file:
         try:
             file = source_file(source_id=args.source_id, version=args.version)
