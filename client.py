@@ -159,7 +159,7 @@ def main():
                     description=args.description,
                     verifier=args.verifier,
                     modifier=args.modifier,
-                    emai=args.email
+                    email=args.email
                     )
     elif args.get_file:
         try:
