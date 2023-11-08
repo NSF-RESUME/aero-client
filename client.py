@@ -1,9 +1,28 @@
 """Osprey Client API."""
-import requests
-from io import StringIO
+import argparse
+import json
+import os
 import pandas as pd
-import sys, argparse, json, os
+import requests
+import sys
+
+from io import StringIO
+from pathlib import Path
+
+from globus_sdk import AccessTokenAuthorizer
+from globus_sdk import NativeAppAuthClient
+from globus_sdk import RefreshTokenAuthorizer
+from globus_sdk import TransferClient
+
 from osprey.server.lib.serializer import serialize
+from osprey.server.lib.globus_auth import authenticate
+
+CLIENT_UUID = 'c78511ef-8cf7-4802-a7e1-7d56e27b1bf8'
+ENDPOINT_ID = '6dec76ea-e7fd-492e-947e-f2a92073a275'
+COLLECTION_UUID = '52f7f6bc-444f-439a-ad48-a4569d10c3d1'
+HTTPS_SERVER = 'https://g-c952d0.1305de.36fe.data.globus.org' 
+DSAAS_DIR = Path(Path.home(), '.local/share/dsaas')
+TOKEN_FILE = 'client_tokens.json'
 
 SERVER_ADDRESS = os.getenv('DSAAS_SERVER')
 
@@ -55,12 +74,47 @@ def get_file(source_id: str, version: str) -> None:
     params = {}
     if version is not None:
         params['version'] = version
-    resp = requests.get(f'{SERVER_URL}/source/{source_id}/file', params=params)
-    if resp.status_code == 200:
-        return resp.json()
+    req= requests.get(f'{SERVER_URL}/source/{source_id}/file', params=params)
+
+    if req.status_code == 200:
+        # initiate Globus transfer
+        TRANSFER_ACCESS_TOKEN = client_auth()
+        headers = {'Authorization': f'Bearer {TRANSFER_ACCESS_TOKEN}'}
+
+        url = f'{HTTPS_SERVER}/{"/".join(req.json()["file_name"].split("/")[2:])}'
+        return pd.DataFrame(requests.get(url, headers=headers).json())
     else:
-        response = resp.json()
-        raise ClientError(response.get('status', resp.status_code), response['message'])
+        raise ClientError(req.status_code, req.text)
+
+        
+def client_auth() -> str:
+    """Authorizes the client for HTTPS transfers to and from the GCS server
+    
+    Returns:
+        str: Access token of the authorizer
+    """
+    token_path = Path(DSAAS_DIR, TOKEN_FILE)
+    client = NativeAppAuthClient(client_id=CLIENT_UUID)
+    if token_path.is_file():
+        with open(token_path, 'r') as f:
+            tokens = json.load(f)
+        refresh_token = tokens["refresh_token"]
+        transfer_token = tokens["access_token"]
+        authorizer = RefreshTokenAuthorizer(refresh_token=refresh_token, auth_client=client)
+    else:
+        scopes = f'https://auth.globus.org/scopes/{COLLECTION_UUID}/https'
+        token_response = authenticate(client=client, scope=scopes)
+        globus_transfer_data = token_response.by_resource_server[COLLECTION_UUID]
+
+        DSAAS_DIR.mkdir(exist_ok=True)
+        with open(token_path, 'w+') as f:
+            json.dump(globus_transfer_data, f)
+        
+        transfer_token = globus_transfer_data["access_token"]
+        authorizer=AccessTokenAuthorizer(access_token=transfer_token)
+
+    transfer_client = TransferClient(authorizer=authorizer)
+    return transfer_token
 
 def source_file(source_id, version = None):
     response = get_file(source_id, version)
