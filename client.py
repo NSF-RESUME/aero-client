@@ -45,31 +45,33 @@ def register_function(func):
     res = requests.get(f'{SERVER_URL}/function', params={'function': pickled_function})
     return res.json()
 
-def all_sources() -> list[dict[str, str | int]]:
+def list_sources() -> list[dict[str, str | int]]:
     """Get the dictionary of all the sources.
 
     Returns:
-        a list containing all available sources data
+        list[dict[str, str | int ]]: a list containing all available sources data
     """
     req = requests.get(f'{SERVER_URL}/source')
     resp = json.loads(req.content)
     return resp
 
-def all_proxies() -> None:
-    """Get the dictionary of all the sources.
-
-    Returns:
-        a list containing all available sources data
-    """
-    req = requests.get(f'{SERVER_URL}/proxies')
-    resp = json.loads(req.content)
-    print(json.dumps(resp, indent=4))
-
-def get_file(source_id: str, version: str) -> None:
+def get_file(source_id: int,
+             version: int | None = None,
+             output_path: str | None = None
+) -> pd.DataFrame:
     """Gets the version for the source.
 
+    Args:
+        source_id (int): ID of the source data to fetch
+        version (int, optional): Version of the source data to fetch.
+            If none provided, fetches latest version. Defaults to None.
+        output_path (str, optional): Path to save data to.
+
     Returns:
-        prints the file
+        pd.DataFrame: DataFrame representation of the data.
+
+    Raises:
+        ClientError: If data was unable to be transferred
     """
     params = {}
     if version is not None:
@@ -78,16 +80,20 @@ def get_file(source_id: str, version: str) -> None:
 
     if req.status_code == 200:
         # initiate Globus transfer
-        TRANSFER_ACCESS_TOKEN = client_auth()
+        TRANSFER_ACCESS_TOKEN = _client_auth()
         headers = {'Authorization': f'Bearer {TRANSFER_ACCESS_TOKEN}'}
 
         url = f'{HTTPS_SERVER}/{"/".join(req.json()["file_name"].split("/")[2:])}'
-        return pd.DataFrame(requests.get(url, headers=headers).json())
+        df = pd.DataFrame(requests.get(url, headers=headers).json())
+
+        if output_path is not None:
+            df.to_json(output_path)
+        return df
     else:
         raise ClientError(req.status_code, req.text)
 
         
-def client_auth() -> str:
+def _client_auth() -> str:
     """Authorizes the client for HTTPS transfers to and from the GCS server
     
     Returns:
@@ -116,14 +122,26 @@ def client_auth() -> str:
     transfer_client = TransferClient(authorizer=authorizer)
     return transfer_token
 
-def source_file(source_id, version = None):
-    response = get_file(source_id, version)
-    if(response['file_type'] == 'json'):
-        return json.loads(response['file'])
-    if(response['file_type'] == 'csv' or response['file_type'] is None):
-        return pd.read_csv(StringIO(response['file']))
+def create_source(
+    name: str,
+    url: str, 
+    email: str,
+    timer: int | None = None,
+    description: str | None = None,
+    verifier: str | None = None,
+    modifier: str | None = None
+) -> None:
+    """Create a source and store it in the database/server.
 
-def create_source(name: str, url: str, timer: int = None, description: str = None, verifier: str = None, email: str = None, modifier: str = None) -> None:
+    Args:
+        name (str): Source name
+        url (str): URL to fetch the source data from
+        email (str): Email to send timer flow updates to.
+        timer (int, optional): Update timer frequency in seconds. Defaults to None.
+        description (str, optional): Description of the data. Defaults to None.
+        verifier (str, optional): Globus Compute function UUID for the verification function. Defaults to None.
+        modifier (str, optional): Globus Compute function UUID for the modifier function. Defaults to None.
+    """
     data = {'name': name, 'url': url}
     if timer is not None:
         data['timer'] = timer
@@ -140,84 +158,110 @@ def create_source(name: str, url: str, timer: int = None, description: str = Non
 
     req = requests.post(f'{SERVER_URL}/source', json=data)
     res = json.loads(req.content)
-    print(res)
     return res
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Osprey client to create sources',
+        description='DSaaS client for querying stored data',
     )
+    subparsers = parser.add_subparsers(dest='command', help='Available actions')
+    list_parser = subparsers.add_parser('list', help='List all stored sources')
+    create_parser = subparsers.add_parser('create', help='Create a source to store in DSaas')
+    get_parser = subparsers.add_parser('get', help='Get source table from server') 
 
-    command_group = parser.add_mutually_exclusive_group(required=True)
-    command_group.add_argument('-list_sources', action='store_true')
-    command_group.add_argument('-list_proxies',  action='store_true')
-    command_group.add_argument('-create_source',  action='store_true')
-    command_group.add_argument('-get_file',  action='store_true')
-    parser.add_argument(
+    # create_parser arguments
+    create_parser.add_argument(
             '-n',
             '--name',
-            required='-create_source' in sys.argv,
+            type=str,
+            required=True,
             help='Name for the source',
-        )
-    parser.add_argument(
+    )
+    create_parser.add_argument(
         '-u',
         '--url',
-        required='-create_source' in sys.argv,
-        help='url for the source',
+        type=str,
+        required=True,
+        help='URL to retrieve the source from',
     )
-    parser.add_argument(
-        '-s_id',
-        '--source_id',
-        required='-get_file' in sys.argv,
-        help='source id for the source',
-    )
-    parser.add_argument(
-        '-ver',
-        '--version',
-        help='version for the source',
-    )
-    parser.add_argument(
+    create_parser.add_argument(
         '-t',
         '--timer',
+        default=None,
+        type=int,
         help='timer (in s) how often to refresh source',
     )
-    parser.add_argument(
+    create_parser.add_argument(
         '-d',
         '--description',
+        default=None,
+        type=str,
         help='description for the source',
     )
-    parser.add_argument(
+    create_parser.add_argument(
         '-v',
         '--verifier',
+        default=None,
+        type=str,
         help='globus-compute function uuid for the verifier',
     )
-    parser.add_argument(
+    create_parser.add_argument(
         '-m',
         '--modifier',
+        default=None,
+        type=str,
         help='globus-compute function uuid for the modifier',
     )
-    parser.add_argument(
+    create_parser.add_argument(
         '-e',
         '--email',
+        type=str,
+        required=True,
         help='email address to send notifications to in case of failure'
     )
+
+    # Get parser arguments
+    get_parser.add_argument(
+        '-s_id',
+        '--source_id',
+        required=True,
+        help='source id of the source to fetch',
+    )
+    get_parser.add_argument(
+        '-ver',
+        '--version',
+        help='version of the source to fetch',
+    )
+    get_parser.add_argument(
+        '-o',
+        '--output_path',
+        default=None,
+        type=str,
+        help='output path to save data to.'
+    )
     args = parser.parse_args()
-    if args.list_sources:
-        print(json.dumps(all_sources(), indent=4))
-    elif args.list_proxies:
-        print(json.dumps(all_proxies(), indent=4))
-    elif args.create_source:
+
+    # actions
+    if args.command == 'list':
+        print(json.dumps(list_sources(), indent=4))
+    # elif args.list_proxies:
+    #    print(json.dumps(all_proxies(), indent=4))
+    elif args.command == 'create':
         create_source(name=args.name,
                     url=args.url,
                     timer=args.timer,
                     description=args.description,
                     verifier=args.verifier,
                     modifier=args.modifier,
-                    email=args.email
+                    email=args.email,
                     )
-    elif args.get_file:
+    elif args.command == 'get':
         try:
-            file = source_file(source_id=args.source_id, version=args.version)
+            file = get_file(
+                source_id=args.source_id,
+                version=args.version,
+                output_path=args.output_path
+            )
             print(file.head(5))
         except ClientError as e:
             print(e)
