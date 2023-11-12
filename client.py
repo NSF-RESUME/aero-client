@@ -55,6 +55,16 @@ def list_sources() -> list[dict[str, str | int]]:
     resp = json.loads(req.content)
     return resp
 
+def source_versions(source_id: int) -> list[dict[str, str | int]]:
+    """List versions given a source id.
+    
+    Returns:
+        list[dict[str, str | int]]: A list of all source versions
+    """
+    req = requests.get(f'{SERVER_URL}/source/{source_id}/versions')
+    resp = json.loads(req.content)
+    return resp
+
 def get_file(source_id: int,
              version: int | None = None,
              output_path: str | None = None
@@ -169,6 +179,14 @@ def main():
     create_parser = subparsers.add_parser('create', help='Create a source to store in DSaas')
     get_parser = subparsers.add_parser('get', help='Get source table from server') 
 
+    list_parser.add_argument(
+        '-s',
+        '--source_id',
+        type=int,
+        required=False,
+        help='list all versions associated with provided source id'
+    )
+
     # create_parser arguments
     create_parser.add_argument(
             '-n',
@@ -243,7 +261,15 @@ def main():
 
     # actions
     if args.command == 'list':
-        print(json.dumps(list_sources(), indent=4))
+        if args.source_id is not None:
+            versions = source_versions(args.source_id)
+            if len(versions) == 0:
+                print('No versions available.')
+            else:
+                print(json.dumps(versions, indent=4))
+        else:
+            print(json.dumps(list_sources(), indent=4))
+
     # elif args.list_proxies:
     #    print(json.dumps(all_proxies(), indent=4))
     elif args.command == 'create':
