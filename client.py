@@ -93,8 +93,12 @@ def get_file(source_id: int,
         TRANSFER_ACCESS_TOKEN = _client_auth()
         headers = {'Authorization': f'Bearer {TRANSFER_ACCESS_TOKEN}'}
 
-        url = f'{HTTPS_SERVER}/{"/".join(req.json()["file_name"].split("/")[2:])}'
-        df = pd.DataFrame(requests.get(url, headers=headers).json())
+        url = f'{HTTPS_SERVER}/source/{req.json()["file_name"]}'
+        resp = requests.get(url, headers=headers)
+        try:
+            df = pd.DataFrame(resp.json())
+        except:
+            df = pd.DataFrame(resp.text)
 
         if output_path is not None:
             df.to_json(output_path)
