@@ -5,6 +5,7 @@ import os
 import pandas as pd
 import requests
 import sys
+import uuid
 
 from io import StringIO
 from pathlib import Path
@@ -105,6 +106,24 @@ def get_file(source_id: int,
         return df
     else:
         raise ClientError(req.status_code, req.text)
+
+def save_output(data: str, description: str | None = None) -> str:
+    TRANSFER_ACCESS_TOKEN = _client_auth()
+    headers = {'Authorization': f'Bearer {TRANSFER_ACCESS_TOKEN}'}
+
+    filename = str(uuid.uuid4())
+    url = f'{HTTPS_SERVER}/output/{filename}'
+    resp = requests.put(url, headers=headers, data=data)
+        
+    if resp.status_code == 200:
+        return filename
+    else:
+        raise ClientError(resp.status_code, resp.text)
+
+def register_flow(function_uuid: str, kwargs: dict):
+    # assuming that it's running on our endpoint
+    pass
+    
 
         
 def _client_auth() -> str:
