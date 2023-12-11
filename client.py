@@ -7,7 +7,6 @@ import requests
 import sys
 import uuid
 
-from io import StringIO
 from pathlib import Path
 
 from globus_sdk import AccessTokenAuthorizer
@@ -107,7 +106,31 @@ def get_file(source_id: int,
     else:
         raise ClientError(req.status_code, req.text)
 
-def save_output(data: str, description: str | None = None) -> str:
+
+def save_output(
+    data: str,
+    name: str,
+    description: str,
+    sources:dict[int, int] = {},
+    function_uuid: str | None = None,
+    args: str | None = None,
+    ) -> str:
+    """Save input data to GCS and record provenance information to DSaaS.
+
+    Args:
+        data (str): Currently either JSON or CSV string will work. Eventually will accept any Python object.
+        sources (list[int]): List of DSaaS source ids that contributed to the production of this data. Defaults to [].
+        name (str): Identifier to associate the data with. Will eventually help with search.
+        description (str): Text-based description of the provenance of the data
+        function_uuid (str | None, optional): The UUID of the function used to process the data. Defaults to None.
+        args: (str | None, optional): Input arguments to the function in string format. 
+
+    Raises:
+        ClientError: if DSaaS or GCS were not able to update properly, this error is raised
+
+    Returns:
+        str: the GCS UUID of the data should the client need to query it afterwards.
+    """
     TRANSFER_ACCESS_TOKEN = _client_auth()
     headers = {'Authorization': f'Bearer {TRANSFER_ACCESS_TOKEN}'}
 
@@ -116,9 +139,24 @@ def save_output(data: str, description: str | None = None) -> str:
     resp = requests.put(url, headers=headers, data=data)
         
     if resp.status_code == 200:
-        return filename
+        ## store in DB
+        params = { 
+                  'output_fn': filename,
+                  'function_uuid': function_uuid,
+                  'sources': sources,
+                  'name': name,
+                  'description': description,
+                  'args': args
+                }   
+        req = requests.post(f'{SERVER_URL}/provenance/new/{function_uuid}', params=params)
+
+        if req.status_code == 200:
+            return filename
+        else:
+            raise ClientError(req.status_code, req.text)
     else:
         raise ClientError(resp.status_code, resp.text)
+
 
 def register_flow(function_uuid: str, kwargs: dict):
     # assuming that it's running on our endpoint
