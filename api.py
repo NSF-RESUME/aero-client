@@ -105,7 +105,7 @@ def save_output(
 
     Args:
         data (str): Currently either JSON or CSV string will work. Eventually will accept any Python object.
-        sources (list[int]): List of DSaaS source ids that contributed to the production of this data. Defaults to [].
+        sources (dict[int | int]): A dictionary of DSaaS source ids and versions that contributed to the production of this data. Defaults to {}.
         name (str): Identifier to associate the data with. Will eventually help with search.
         description (str): Text-based description of the provenance of the data
         function_uuid (str, optional): The UUID of the function used to process the data. Defaults to ''.
