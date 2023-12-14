@@ -5,8 +5,9 @@ import pandas as pd
 import requests
 import uuid
 
+from pathlib import Path
+
 from osprey.client import CONF
-from osprey.client import SERVER_URL
 from osprey.client import TRANSFER_ACCESS_TOKEN
 
 from osprey.client.error import ClientError
@@ -18,7 +19,9 @@ logger = logging.getLogger(__name__)
 
 def register_function(func):
     pickled_function = serialize(func)
-    res = requests.get(f"{SERVER_URL}/function", params={"function": pickled_function})
+    res = requests.get(
+        f"{CONF.server_url}/function", params={"function": pickled_function}
+    )
     return res.json()
 
 
@@ -29,7 +32,7 @@ def list_sources() -> list[dict[str, str | int]]:
         list[dict[str, str | int ]]: a list containing all available sources data
     """
     logger.debug("Retrieving all sources from server")
-    req = requests.get(f"{SERVER_URL}/source")
+    req = requests.get(f"{CONF.server_url}/source")
     resp = json.loads(req.content)
     return resp
 
@@ -41,7 +44,7 @@ def source_versions(source_id: int) -> list[dict[str, str | int]]:
         list[dict[str, str | int]]: A list of all source versions
     """
     logger.debug(f"Requesting all versions of source id {source_id}.")
-    req = requests.get(f"{SERVER_URL}/source/{source_id}/versions")
+    req = requests.get(f"{CONF.server_url}/source/{source_id}/versions")
     resp = json.loads(req.content)
     return resp
 
@@ -68,7 +71,7 @@ def get_file(
         params["version"] = version
 
     logger.debug("Retrieving filename of specified source.")
-    req = requests.get(f"{SERVER_URL}/source/{source_id}/file", params=params)
+    req = requests.get(f"{CONF.server_url}/source/{source_id}/file", params=params)
 
     if req.status_code == 200:
         # initiate Globus transfer
@@ -79,7 +82,7 @@ def get_file(
         resp = requests.get(url, headers=headers)
         try:
             df = pd.DataFrame(resp.json())
-        except Exception as e:
+        except Exception:
             df = pd.DataFrame(resp.text)
 
         if output_path is not None:
@@ -132,7 +135,7 @@ def save_output(
             "args": args,
         }
         req = requests.post(
-            f"{SERVER_URL}/prov/new/{function_uuid}",
+            f"{CONF.server_url}/prov/new/{function_uuid}",
             data=json.dumps(params),
             headers=headers,
         )
@@ -148,6 +151,12 @@ def save_output(
 def register_flow(function_uuid: str, kwargs: dict):
     # assuming that it's running on our endpoint
     pass
+
+
+def globus_logout():
+    """Remove the Globus Auth token file to invoke login on next API access."""
+    logger.debug("Removing Globus auth tokens.")
+    Path(CONF.dsaas_dir, CONF.token_file).unlink()
 
 
 def create_source(
@@ -184,6 +193,6 @@ def create_source(
     else:
         data["email"] = ""  # todo make email optional
 
-    req = requests.post(f"{SERVER_URL}/source", json=data)
+    req = requests.post(f"{CONF.server_url}/source", json=data)
     res = json.loads(req.content)
     return res

@@ -15,12 +15,14 @@ class ClientConf:
     dsaas_dir: str = Path(Path.home(), ".local/share/dsaas")
     token_file: str = "client_tokens.json"
     server_address: str = field(init=False)
+    server_url: str = field(init=False)
 
     def __post_init__(self):
         if (test := os.getenv("DSAAS_TESTENV")) is not None and int(test) == 1:
-            self.server_address = "127.0.0.1:5001"
+            self.server_address = "localhost:5001"
         else:
             self.server_address = "129.114.27.115:5001"
+        self.server_url = f"http://{self.server_address}/osprey/api/v1.0/"
 
 
 CONF = ClientConf()

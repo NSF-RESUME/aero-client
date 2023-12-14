@@ -1,5 +1,6 @@
 """DSaaS client util module"""
 import json
+import logging
 
 from pathlib import Path
 
@@ -11,6 +12,8 @@ from globus_sdk import TransferClient
 from osprey.client import CONF
 from osprey.server.lib.globus_auth import authenticate
 
+logger = logging.getLogger(__name__)
+
 
 def _client_auth() -> str:
     """Authorizes the client for HTTPS transfers to and from the GCS server
@@ -21,6 +24,7 @@ def _client_auth() -> str:
     token_path = Path(CONF.dsaas_dir, CONF.token_file)
     client = NativeAppAuthClient(client_id=CONF.client_uuid)
     if token_path.is_file():
+        logger.debug("Token file exists. Instantiating tokens from authorizer.")
         with open(token_path, "r") as f:
             tokens = json.load(f)
         refresh_token = tokens["refresh_token"]
@@ -40,5 +44,5 @@ def _client_auth() -> str:
         transfer_token = globus_transfer_data["access_token"]
         authorizer = AccessTokenAuthorizer(access_token=transfer_token)
 
-    transfer_client = TransferClient(authorizer=authorizer)
+    _ = TransferClient(authorizer=authorizer)
     return transfer_token

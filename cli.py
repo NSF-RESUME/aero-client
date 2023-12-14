@@ -3,14 +3,12 @@ import argparse
 import json
 import logging
 
-from pathlib import Path
 
-from osprey.client import CONF
-
-from osprey.client import create_source
-from osprey.client import get_file
-from osprey.client import list_sources
-from osprey.client import source_versions
+from osprey.client.api import create_source
+from osprey.client.api import get_file
+from osprey.client.api import globus_logout
+from osprey.client.api import list_sources
+from osprey.client.api import source_versions
 
 from osprey.client.error import ClientError
 
@@ -148,8 +146,7 @@ def main():
         except ClientError as e:
             print(e)
     elif args.command == "logout":
-        logger.debug("Removing Globus auth tokens.")
-        Path(CONF.dsaas_dir, CONF.token_file).unlink()
+        globus_logout()
 
 
 if __name__ == "__main__":
