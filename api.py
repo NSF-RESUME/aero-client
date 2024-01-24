@@ -6,15 +6,18 @@ import requests
 import uuid
 
 from pathlib import Path
+from typing import TypeAlias
 
-from osprey.client import CONF
 from osprey.client import TRANSFER_ACCESS_TOKEN
+from osprey.client.config import CONF
 
 from osprey.client.error import ClientError
 
 from osprey.server.lib.serializer import serialize
 
 logger = logging.getLogger(__name__)
+
+JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
 
 def register_function(func):
@@ -33,6 +36,24 @@ def list_sources() -> list[dict[str, str | int]]:
     """
     logger.debug("Retrieving all sources from server")
     req = requests.get(f"{CONF.server_url}/source")
+    resp = json.loads(req.content)
+    return resp
+
+
+def search_sources(query: str) -> list[dict[str, str | int]]:
+    """Get the sources that match the query
+
+    Args:
+        query (str): a Globus Search query string
+
+    Returns:
+        list[dict[str, str | int]]: list of sources matching the query
+    """
+
+    logger.debug(f"Querying the sources with {query}")
+    params = {"query": query}
+    req = requests.get(f"{CONF.server_url}/source/search", params=params)
+    print(req.content)
     resp = json.loads(req.content)
     return resp
 
@@ -99,7 +120,7 @@ def save_output(
     description: str,
     sources: dict[int, int] = {},
     function_uuid: str = "",
-    args: str = "",
+    kwargs: JSON | None = None,
 ) -> str:
     """Save input data to GCS and record provenance information to DSaaS.
 
@@ -109,7 +130,7 @@ def save_output(
         name (str): Identifier to associate the data with. Will eventually help with search.
         description (str): Text-based description of the provenance of the data
         function_uuid (str, optional): The UUID of the function used to process the data. Defaults to ''.
-        args: (str, optional): Input arguments to the function in string format. Defaults to ''.
+        kwargs: (JSON, optional): Input arguments to the function in JSON format. Defaults to None.
 
     Raises:
         ClientError: if DSaaS or GCS were not able to update properly, this error is raised
@@ -132,7 +153,7 @@ def save_output(
             "sources": sources,
             "name": name,
             "description": description,
-            "args": args,
+            "kwargs": kwargs,
         }
         req = requests.post(
             f"{CONF.server_url}/prov/new/{function_uuid}",
@@ -148,9 +169,30 @@ def save_output(
         raise ClientError(resp.status_code, resp.text)
 
 
-def register_flow(function_uuid: str, kwargs: dict):
+def register_flow(function_uuid: str, kwargs: JSON = None) -> None:
+    """Register user function to run as a Globus Flow on remote server periodically.
+
+    Args:
+        function_uuid (str): Globus Compute registered function UUID
+        kwargs (JSON): Keyword arguments to pass to function. Default is None
+
+    Raises:
+        ClientError: if function was not able to be registered as a flow, this error is raised
+
+    Returns:
+        str: the timer job uuid.
+    """
     # assuming that it's running on our endpoint
-    pass
+
+    headers = {"Content-type", "application/json"}
+    response = requests.post(
+        f"{CONF.http_server}/prov/timer/{function_uuid}",
+        headers=headers,
+        data={"kwargs": kwargs},
+    )
+    if response.status_code == 200:
+        return
+    raise ClientError(response.status_code, response.text)
 
 
 def globus_logout():

@@ -9,7 +9,7 @@ from globus_sdk import NativeAppAuthClient
 from globus_sdk import RefreshTokenAuthorizer
 from globus_sdk import TransferClient
 
-from osprey.client import CONF
+from osprey.client.config import CONF
 from osprey.server.lib.globus_auth import authenticate
 
 logger = logging.getLogger(__name__)

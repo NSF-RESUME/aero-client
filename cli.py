@@ -8,6 +8,7 @@ from osprey.client.api import create_source
 from osprey.client.api import get_file
 from osprey.client.api import globus_logout
 from osprey.client.api import list_sources
+from osprey.client.api import search_sources
 from osprey.client.api import source_versions
 
 from osprey.client.error import ClientError
@@ -25,6 +26,7 @@ def main():
         "create", help="Create a source to store in DSaas"
     )
     get_parser = subparsers.add_parser("get", help="Get source table from server")
+    search_parser = subparsers.add_parser("search", help="Search sources")
     _ = subparsers.add_parser("logout", help="Log out of Globus auth")
 
     parser.add_argument("-l", "--log", type=str, default="INFO", help="Set log level")
@@ -107,6 +109,8 @@ def main():
         type=str,
         help="output path to save data to.",
     )
+
+    search_parser.add_argument("query", type=str, help="query to pass to search engine")
     args = parser.parse_args()
 
     log_level = getattr(logging, args.log.upper(), None)
@@ -145,6 +149,15 @@ def main():
             print(file.head(5))
         except ClientError as e:
             print(e)
+
+    elif args.command == "search":
+        res = search_sources(args.query)
+
+        if len(res) == 0:
+            print("Search returned no results")
+        else:
+            print(json.dumps(res, indent=4))
+
     elif args.command == "logout":
         globus_logout()
 
