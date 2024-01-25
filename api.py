@@ -53,7 +53,7 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
     logger.debug(f"Querying the sources with {query}")
     params = {"query": query}
     req = requests.get(f"{CONF.server_url}/source/search", params=params)
-    print(req.content)
+    print(req.status_code)
     resp = json.loads(req.content)
     return resp
 
@@ -209,6 +209,7 @@ def create_source(
     description: str | None = None,
     verifier: str | None = None,
     modifier: str | None = None,
+    tags: str | None = None,
 ) -> None:
     """Create a source and store it in the database/server.
 
