@@ -1,4 +1,5 @@
 """DSaaS client API module"""
+import io
 import json
 import logging
 import pandas as pd
@@ -104,7 +105,7 @@ def get_file(
         try:
             df = pd.DataFrame(resp.json())
         except Exception:
-            df = pd.DataFrame(resp.text)
+            df = pd.read_table(io.StringIO(resp.text), sep=",")
 
         if output_path is not None:
             logger.debug("Saving Pandas DataFrame locally.")
@@ -221,6 +222,7 @@ def create_source(
         description (str, optional): Description of the data. Defaults to None.
         verifier (str, optional): Globus Compute function UUID for the verification function. Defaults to None.
         modifier (str, optional): Globus Compute function UUID for the modifier function. Defaults to None.
+        tags
     """
     data = {"name": name, "url": url}
     if timer is not None:
