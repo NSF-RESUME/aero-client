@@ -170,12 +170,19 @@ def save_output(
         raise ClientError(resp.status_code, resp.text)
 
 
-def register_flow(function_uuid: str, kwargs: JSON = None) -> None:
+def register_flow(
+    endpoint_uuid: str,
+    function_uuid: str,
+    kwargs: JSON | None = None,
+    config: str | None = None,
+) -> None:
     """Register user function to run as a Globus Flow on remote server periodically.
 
     Args:
+        endpoint_uuid (str): Globus Compute endpoint uuid
         function_uuid (str): Globus Compute registered function UUID
-        kwargs (JSON): Keyword arguments to pass to function. Default is None
+        kwargs (JSON, optional): Keyword arguments to pass to function. Default is None
+        config (str, optional): Path to config file. Default is None.
 
     Raises:
         ClientError: if function was not able to be registered as a flow, this error is raised
@@ -183,13 +190,30 @@ def register_flow(function_uuid: str, kwargs: JSON = None) -> None:
     Returns:
         str: the timer job uuid.
     """
+
+    with open(config) as f:
+        tasks = json.load(f)
+
+    if kwargs is None and len(tasks) > 0:
+        kwargs = tasks[0]
     # assuming that it's running on our endpoint
+
+    data = {}
+
+    if kwargs is not None:
+        data["kwargs"] = kwargs
+    if len(tasks) > 1:
+        data["tasks"] = tasks[1:]
+
+    for t in data["tasks"]:
+        t["endpoint"] = endpoint_uuid
+        t["function"] = function_uuid
 
     headers = {"Content-type", "application/json"}
     response = requests.post(
         f"{CONF.http_server}/prov/timer/{function_uuid}",
         headers=headers,
-        data={"kwargs": kwargs},
+        data=data,
     )
     if response.status_code == 200:
         return
