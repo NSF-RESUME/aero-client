@@ -9,6 +9,7 @@ import uuid
 from pathlib import Path
 from typing import TypeAlias
 
+from osprey.client import AUTH_ACCESS_TOKEN
 from osprey.client import TRANSFER_ACCESS_TOKEN
 from osprey.client.config import CONF
 
@@ -23,8 +24,12 @@ JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | 
 
 def register_function(func):
     pickled_function = serialize(func)
+    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     res = requests.get(
-        f"{CONF.server_url}/function", params={"function": pickled_function}
+        f"{CONF.server_url}/function",
+        params={"function": pickled_function},
+        headers=headers,
+        verify=False,
     )
     return res.json()
 
@@ -36,7 +41,8 @@ def list_sources() -> list[dict[str, str | int]]:
         list[dict[str, str | int ]]: a list containing all available sources data
     """
     logger.debug("Retrieving all sources from server")
-    req = requests.get(f"{CONF.server_url}/source")
+    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+    req = requests.get(f"{CONF.server_url}/source", headers=headers, verify=False)
     resp = json.loads(req.content)
     return resp
 
@@ -53,7 +59,10 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
 
     logger.debug(f"Querying the sources with {query}")
     params = {"query": query}
-    req = requests.get(f"{CONF.server_url}/source/search", params=params)
+    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+    req = requests.get(
+        f"{CONF.server_url}/source/search", params=params, headers=headers, verify=False
+    )
     print(req.status_code)
     resp = json.loads(req.content)
     return resp
@@ -66,7 +75,10 @@ def source_versions(source_id: int) -> list[dict[str, str | int]]:
         list[dict[str, str | int]]: A list of all source versions
     """
     logger.debug(f"Requesting all versions of source id {source_id}.")
-    req = requests.get(f"{CONF.server_url}/source/{source_id}/versions")
+    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+    req = requests.get(
+        f"{CONF.server_url}/source/{source_id}/versions", headers=headers, verify=False
+    )
     resp = json.loads(req.content)
     return resp
 
@@ -93,14 +105,20 @@ def get_file(
         params["version"] = version
 
     logger.debug("Retrieving filename of specified source.")
-    req = requests.get(f"{CONF.server_url}/source/{source_id}/file", params=params)
+    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+    req = requests.get(
+        f"{CONF.server_url}/source/{source_id}/file",
+        params=params,
+        headers=headers,
+        verify=False,
+    )
 
     if req.status_code == 200:
         # initiate Globus transfer
-        headers = {"Authorization": f"Bearer {TRANSFER_ACCESS_TOKEN}"}
         url = f'{CONF.https_server}/source/{req.json()["file_name"]}'
 
         logger.debug("Initiating Globus Transfer of file.")
+        headers = {"Authorization": f"Bearer {TRANSFER_ACCESS_TOKEN}"}
         resp = requests.get(url, headers=headers)
         try:
             df = pd.DataFrame(resp.json())
@@ -147,7 +165,7 @@ def save_output(
 
     if resp.status_code == 200:
         ## store in DB
-        headers = {"Content-type": "application/json"}
+        headers["Content-type"] = "application/json"
         params = {
             "output_fn": filename,
             "function_uuid": function_uuid,
@@ -156,10 +174,13 @@ def save_output(
             "description": description,
             "kwargs": kwargs,
         }
+
+        headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
         req = requests.post(
             f"{CONF.server_url}/prov/new/{function_uuid}",
             data=json.dumps(params),
             headers=headers,
+            verify=False,
         )
 
         if req.status_code == 200:
@@ -209,17 +230,22 @@ def register_flow(
         t["endpoint"] = endpoint_uuid
         t["function"] = function_uuid
 
-    headers = {"Content-type", "application/json"}
+    headers = {
+        "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
+        "Content-type": "application/json",
+    }
     response = requests.post(
-        f"{CONF.http_server}/prov/timer/{function_uuid}",
+        f"{CONF.server_url}/prov/timer/{function_uuid}",
         headers=headers,
         data=data,
+        verify=False,
     )
     if response.status_code == 200:
         return
     raise ClientError(response.status_code, response.text)
 
 
+# TODO: Fix bug where it'll request to login if tokens are not present
 def globus_logout():
     """Remove the Globus Auth token file to invoke login on next API access."""
     logger.debug("Removing Globus auth tokens.")
@@ -262,6 +288,9 @@ def create_source(
     else:
         data["email"] = ""  # todo make email optional
 
-    req = requests.post(f"{CONF.server_url}/source", json=data)
+    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+    req = requests.post(
+        f"{CONF.server_url}/source", json=data, headers=headers, verify=False
+    )
     res = json.loads(req.content)
     return res
