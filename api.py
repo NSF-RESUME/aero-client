@@ -175,7 +175,10 @@ def save_output(
             "kwargs": kwargs,
         }
 
-        headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+        headers = {
+            "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
+            "Content-type": "application/json",
+        }
         req = requests.post(
             f"{CONF.server_url}/prov/new/{function_uuid}",
             data=json.dumps(params),
