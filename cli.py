@@ -159,6 +159,7 @@ def main():
             print(json.dumps(res, indent=4))
 
     elif args.command == "logout":
+        # TODO: fix bug where user needs to be authenticated before logging out
         globus_logout()
 
 
