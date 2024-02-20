@@ -138,7 +138,7 @@ def save_output(
     name: str,
     description: str,
     sources: dict[int, int] = {},
-    function_uuid: str = "",
+    function_uuid: str | None = None,
     kwargs: JSON | None = None,
 ) -> str:
     """Save input data to GCS and record provenance information to DSaaS.
@@ -180,7 +180,7 @@ def save_output(
             "Content-type": "application/json",
         }
         req = requests.post(
-            f"{CONF.server_url}/prov/new/{function_uuid}",
+            f"{CONF.server_url}/prov/new",
             data=json.dumps(params),
             headers=headers,
             verify=False,
