@@ -197,16 +197,21 @@ def save_output(
 def register_flow(
     endpoint_uuid: str,
     function_uuid: str,
+    sources: dict[int | int] | list[int] | None = None,
     kwargs: JSON | None = None,
     config: str | None = None,
+    description: str | None = None,
 ) -> None:
     """Register user function to run as a Globus Flow on remote server periodically.
 
     Args:
         endpoint_uuid (str): Globus Compute endpoint uuid
         function_uuid (str): Globus Compute registered function UUID
+        sources(dict[int | int], list[int], optional): The input sources. A dict can be provided to include source version
+            as value. Otherwise a list of source ids will use the latest source version. Default is None.
         kwargs (JSON, optional): Keyword arguments to pass to function. Default is None
         config (str, optional): Path to config file. Default is None.
+        description (str, optional): A description of the Flow
 
     Raises:
         ClientError: if function was not able to be registered as a flow, this error is raised
@@ -215,19 +220,22 @@ def register_flow(
         str: the timer job uuid.
     """
 
-    with open(config) as f:
-        tasks = json.load(f)
+    if kwargs is None and config is not None:
+        with open(config) as f:
+            tasks = json.load(f)
 
-    if kwargs is None and len(tasks) > 0:
-        kwargs = tasks[0]
+        if len(tasks) > 0:
+            kwargs = tasks[0]
     # assuming that it's running on our endpoint
 
     data = {}
+    data["sources"] = sources
+    data["description"] = description
 
     if kwargs is not None:
         data["kwargs"] = kwargs
     if len(tasks) > 1:
-        data["tasks"] = tasks[1:]
+        data["tasks"] = tasks
 
     for t in data["tasks"]:
         t["endpoint"] = endpoint_uuid
