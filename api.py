@@ -254,7 +254,7 @@ def register_flow(
         verify=False,
     )
     if response.status_code == 200:
-        return
+        return response
     raise ClientError(response.status_code, response.text)
 
 
