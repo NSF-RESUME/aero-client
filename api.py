@@ -248,7 +248,7 @@ def register_flow(
     response = requests.post(
         f"{CONF.server_url}/prov/timer/{function_uuid}",
         headers=headers,
-        data=data,
+        data=json.dumps(data),
         verify=False,
     )
     if response.status_code == 200:
