@@ -1,4 +1,6 @@
 """DSaaS client util module"""
+import codecs
+import dill
 import json
 import logging
 
@@ -9,10 +11,36 @@ from globus_sdk import NativeAppAuthClient
 from globus_sdk import RefreshTokenAuthorizer
 from globus_sdk import TransferClient
 
-from osprey.client.config import CONF
-from osprey.server.lib.globus_auth import authenticate
+from dsaas_client.config import CONF
+from dsaas_client.error import ClientError
+
+
+_REDIRECT_URI = "https://auth.globus.org/v2/web/auth-code"
 
 logger = logging.getLogger(__name__)
+
+
+def serialize(obj) -> str:
+    try:
+        return codecs.encode(dill.dumps(obj), "base64").decode()
+    except Exception:
+        raise ClientError(400, "Cannot serialize the function")
+
+
+def authenticate(client: NativeAppAuthClient, scope: str):
+    """Perform Globus Authentication."""
+
+    client.oauth2_start_flow(
+        redirect_uri=_REDIRECT_URI, refresh_tokens=True, requested_scopes=scope
+    )
+
+    url = client.oauth2_get_authorize_url()
+    print("Please visit the following url to authenticate:")
+    print(url)
+
+    auth_code = input("Enter the auth code:")
+    auth_code = auth_code.strip()
+    return client.oauth2_exchange_code_for_tokens(auth_code)
 
 
 def _client_auth() -> str:

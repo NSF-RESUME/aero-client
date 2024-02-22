@@ -1,0 +1,35 @@
+[project]
+name = "DSaaS-client"
+description = "Data streams as a service client module"
+version = "0.0.1a"
+authors = [
+    { name = "Valerie Hayot-Sasson", email = "vhayot@uchicago.edu"    },
+    { name = "Sudershan Sridhar",    email = "sudershan@uchicago.edu" }
+]
+dependencies = [
+    "requests",
+    "pandas",
+    "globus_sdk",
+    "dill"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit",
+    "tox"
+]
+
+[project.scripts]
+dsaas = "dsaas_client.cli:main"
+
+[build-system]
+# These are the assumed default build requirements from pip:
+# https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+# exclude = ["Dockerfiles*", "scripts*", "workflow*"]
+
+[tool.ruff]
+extend-select = ["Q"]

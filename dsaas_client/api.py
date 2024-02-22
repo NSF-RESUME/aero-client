@@ -9,13 +9,11 @@ import uuid
 from pathlib import Path
 from typing import TypeAlias
 
-from osprey.client import AUTH_ACCESS_TOKEN
-from osprey.client import TRANSFER_ACCESS_TOKEN
-from osprey.client.config import CONF
-
-from osprey.client.error import ClientError
-
-from osprey.server.lib.serializer import serialize
+from dsaas_client import AUTH_ACCESS_TOKEN
+from dsaas_client import TRANSFER_ACCESS_TOKEN
+from dsaas_client.config import CONF
+from dsaas_client.error import ClientError
+from dsaas_client.utils import serialize
 
 logger = logging.getLogger(__name__)
 

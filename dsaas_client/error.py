@@ -8,4 +8,4 @@ class ClientError(Exception):
         super().__init__(*args)
 
     def __repr__(self) -> str:
-        return f"ClientError Code ({self.code}) : {self.message}"
+        return f"ClientError({self.code}) : {self.message}"

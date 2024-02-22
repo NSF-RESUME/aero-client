@@ -4,14 +4,14 @@ import json
 import logging
 
 
-from osprey.client.api import create_source
-from osprey.client.api import get_file
-from osprey.client.api import globus_logout
-from osprey.client.api import list_sources
-from osprey.client.api import search_sources
-from osprey.client.api import source_versions
+from dsaas_client.api import create_source
+from dsaas_client.api import get_file
+from dsaas_client.api import globus_logout
+from dsaas_client.api import list_sources
+from dsaas_client.api import search_sources
+from dsaas_client.api import source_versions
 
-from osprey.client.error import ClientError
+from dsaas_client.error import ClientError
 
 logger = logging.getLogger(__name__)
 
