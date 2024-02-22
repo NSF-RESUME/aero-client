@@ -231,6 +231,8 @@ def register_flow(
     data = {}
     data["sources"] = sources
     data["description"] = description
+    data["endpoint"] = endpoint_uuid
+    data["function"] = function_uuid
 
     if kwargs is not None:
         data["kwargs"] = kwargs
