@@ -20,7 +20,8 @@ dev = [
 ]
 
 docs = [
-    "mike"
+    "mike",
+    "mkdocstrings"
 ]
 
 [project.scripts]
