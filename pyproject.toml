@@ -19,6 +19,10 @@ dev = [
     "tox"
 ]
 
+docs = [
+    "mike"
+]
+
 [project.scripts]
 dsaas = "dsaas_client.cli:main"
 
