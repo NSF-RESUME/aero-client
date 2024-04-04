@@ -21,7 +21,7 @@ dev = [
 
 docs = [
     "mike",
-    "mkdocstrings",
+    "mkdocstrings[python]>=0.18",
     "mkdocs-material"
 ]
 
