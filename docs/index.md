@@ -5,7 +5,7 @@ DSaaS is a service that enables users to upload, periodically update and share d
 ## Installation
 
 ```
-pip install git+https://github.com/NSF-RESUME/DSaaS_client.git
+pip install git+https://github.com/NSF-RESUME/DSaaS-client
 ```
 
 ## CLI
