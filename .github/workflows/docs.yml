@@ -47,5 +47,5 @@ jobs:
 
       - name: Deploy docs for main:latest to gh-pages branch
         run: |
-          mike deploy --push
+          mike deploy --push main
           mike deploy --push --update-aliases main
