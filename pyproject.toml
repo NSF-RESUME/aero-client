@@ -19,6 +19,12 @@ dev = [
     "tox"
 ]
 
+docs = [
+    "mike",
+    "mkdocstrings[python]>=0.18",
+    "mkdocs-material"
+]
+
 [project.scripts]
 dsaas = "dsaas_client.cli:main"
 
