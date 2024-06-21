@@ -27,13 +27,14 @@ def main():
     )
     get_parser = subparsers.add_parser("get", help="Get source table from server")
     search_parser = subparsers.add_parser("search", help="Search sources")
+    register_parser = subparsers.add_parser("register", help="Register analysis flow")
     _ = subparsers.add_parser("logout", help="Log out of Globus auth")
 
     parser.add_argument("-l", "--log", type=str, default="INFO", help="Set log level")
 
     list_parser.add_argument(
         "-s",
-        "--source_id",
+        "--source-id",
         type=int,
         required=False,
         help="list all versions associated with provided source id",
@@ -53,6 +54,20 @@ def main():
         type=str,
         required=True,
         help="URL to retrieve the source from",
+    )
+    create_parser.add_argument(
+        "-c",
+        "--collection-url",
+        type=str,
+        required=True,
+        help="The GCS Guest Collection domain name",
+    )
+    create_parser.add_argument(
+        "-g",
+        "--endpoint-uuid",
+        type=str,
+        required=True,
+        help="The Globus Compute Endpoint UUID to run ingestion flow on",
     )
     create_parser.add_argument(
         "-t",
@@ -92,8 +107,8 @@ def main():
 
     # Get parser arguments
     get_parser.add_argument(
-        "-s_id",
-        "--source_id",
+        "-sid",
+        "--source-id",
         required=True,
         help="source id of the source to fetch",
     )
@@ -104,13 +119,55 @@ def main():
     )
     get_parser.add_argument(
         "-o",
-        "--output_path",
+        "--output-path",
         default=None,
         type=str,
         help="output path to save data to.",
     )
 
     search_parser.add_argument("query", type=str, help="query to pass to search engine")
+
+    # register arguments
+    #     endpoint_uuid: str,
+    # function_uuid: str,
+    # sources: dict[int | int] | list[int] | None = None,
+    # kwargs: JSON | None = None,
+    # config: str | None = None,
+    # description: str | None = None,
+    register_parser.add_argument(
+        "-e", "--endpoint-uuid", type=str, help="Globus Compute endpoint uuid"
+    )
+    register_parser.add_argument(
+        "-f",
+        "--function-uuid",
+        type=str,
+        help="Globus Compute registered function UUID",
+    )
+    register_parser.add_argument(
+        "-s",
+        "--sources",
+        metavar="SOURCE_ID=VERSION_ID",
+        nargs="+",
+        default=None,
+        help="Source id and version id of source. Set version id to -1 if latest version is desired.",
+    )
+
+    reg_conf_parser = register_parser.add_mutually_exclusive_group(required=False)
+    reg_conf_parser.add_argument(
+        "-k",
+        "--kwargs",
+        metavar="KEY=VALUE",
+        nargs="+",
+        default=None,
+        help="Keyword arguments to pass to function",
+    )
+    reg_conf_parser.add_argument(
+        "-c", "--config", type=str, default=None, help="Path to flow configuration file"
+    )
+    register_parser.add_argument(
+        "-d", "--description", type=str, default=None, help="Description of task"
+    )
+
     args = parser.parse_args()
 
     log_level = getattr(logging, args.log.upper(), None)
@@ -133,6 +190,8 @@ def main():
         create_source(
             name=args.name,
             url=args.url,
+            collection_url=args.collection_url,
+            endpoint_uuid=args.endpoint_uuid,
             timer=args.timer,
             description=args.description,
             verifier=args.verifier,
@@ -157,6 +216,9 @@ def main():
             print("Search returned no results")
         else:
             print(json.dumps(res, indent=4))
+
+    elif args.command == "register":
+        pass
 
     elif args.command == "logout":
         # TODO: fix bug where user needs to be authenticated before logging out

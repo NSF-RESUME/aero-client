@@ -1,4 +1,5 @@
 """DSaaS client API module"""
+import hashlib
 import io
 import json
 import logging
@@ -13,6 +14,7 @@ from dsaas_client import AUTH_ACCESS_TOKEN
 from dsaas_client import TRANSFER_ACCESS_TOKEN
 from dsaas_client.config import CONF
 from dsaas_client.error import ClientError
+from dsaas_client.utils import get_collection_metadata
 from dsaas_client.utils import serialize
 
 logger = logging.getLogger(__name__)
@@ -61,7 +63,6 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
     req = requests.get(
         f"{CONF.server_url}/source/search", params=params, headers=headers, verify=False
     )
-    print(req.status_code)
     resp = json.loads(req.content)
     return resp
 
@@ -113,7 +114,8 @@ def get_file(
 
     if req.status_code == 200:
         # initiate Globus transfer
-        url = f'{CONF.https_server}/source/{req.json()["file_name"]}'
+        sf_data = req.json()
+        url = f'{sf_data["collection_url"]}/{sf_data["file_name"]}'
 
         logger.debug("Initiating Globus Transfer of file.")
         headers = {"Authorization": f"Bearer {TRANSFER_ACCESS_TOKEN}"}
@@ -134,6 +136,7 @@ def get_file(
 def save_output(
     data: str,
     name: str,
+    collection_domain: str,
     description: str,
     sources: dict[int, int] = {},
     function_uuid: str | None = None,
@@ -143,9 +146,10 @@ def save_output(
 
     Args:
         data (str): Currently either JSON or CSV string will work. Eventually will accept any Python object.
-        sources (dict[int | int]): A dictionary of DSaaS source ids and versions that contributed to the production of this data. Defaults to {}.
         name (str): Identifier to associate the data with. Will eventually help with search.
+        collection_domain (str): The domain of the GCS Guest collection to store data to. Data will be stored in its root.
         description (str): Text-based description of the provenance of the data
+        sources (dict[int | int]): A dictionary of DSaaS source ids and versions that contributed to the production of this data. Defaults to {}.
         function_uuid (str, optional): The UUID of the function used to process the data. Defaults to ''.
         kwargs: (JSON, optional): Input arguments to the function in JSON format. Defaults to None.
 
@@ -159,17 +163,25 @@ def save_output(
 
     filename = str(uuid.uuid4())
     url = f"{CONF.https_server}/output/{filename}"
+
+    # store in GCS
     resp = requests.put(url, headers=headers, data=data)
 
     if resp.status_code == 200:
         ## store in DB
         headers["Content-type"] = "application/json"
+        checksum = hashlib.md5(data.encode("utf-8")).hexdigest()
+
+        collection_md = get_collection_metadata(collection_domain)
         params = {
             "output_fn": filename,
+            "collection_uuid": collection_md["DATA"][0]["id"],
+            "collection_url": collection_md["DATA"][0]["https_server"],
             "function_uuid": function_uuid,
             "sources": sources,
             "name": name,
             "description": description,
+            "checksum": checksum,
             "kwargs": kwargs,
         }
 
@@ -266,6 +278,8 @@ def globus_logout():
 def create_source(
     name: str,
     url: str,
+    collection_url: str,
+    endpoint_uuid: str,
     email: str,
     timer: int | None = None,
     description: str | None = None,
@@ -278,6 +292,8 @@ def create_source(
     Args:
         name (str): Source name
         url (str): URL to fetch the source data from
+        collection_url (str): Globus collection domain to store source into.
+        endpoint_uuid (str): Globus Compute Endpoint to use
         email (str): Email to send timer flow updates to.
         timer (int, optional): Update timer frequency in seconds. Defaults to None.
         description (str, optional): Description of the data. Defaults to None.
@@ -285,7 +301,16 @@ def create_source(
         modifier (str, optional): Globus Compute function UUID for the modifier function. Defaults to None.
         tags
     """
-    data = {"name": name, "url": url}
+    collection_md = get_collection_metadata(collection_url)
+
+    collection_uuid = collection_md["DATA"][0]["id"]
+    data = {
+        "name": name,
+        "url": url,
+        "collection_url": collection_url,
+        "collection_uuid": collection_uuid,
+        "user_endpoint": endpoint_uuid,
+    }
     if timer is not None:
         data["timer"] = timer
     if description is not None:
@@ -296,12 +321,15 @@ def create_source(
         data["modifier"] = modifier
     if email is not None:
         data["email"] = email
-    else:
+    if tags is not None:
+        data["tags"] = tags
+    elif email is None:
         data["email"] = ""  # todo make email optional
 
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.post(
         f"{CONF.server_url}/source", json=data, headers=headers, verify=False
     )
+    print(req.content)
     res = json.loads(req.content)
     return res
