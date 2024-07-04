@@ -10,6 +10,7 @@ dependencies = [
     "requests",
     "pandas",
     "globus_sdk",
+    "globus_compute_sdk",
     "dill"
 ]
 
@@ -26,7 +27,7 @@ docs = [
 ]
 
 [project.scripts]
-dsaas = "dsaas_client.cli:main"
+aero = "dsaas_client.cli:main"
 
 [build-system]
 # These are the assumed default build requirements from pip:

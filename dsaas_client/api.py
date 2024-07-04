@@ -3,19 +3,23 @@ import hashlib
 import io
 import json
 import logging
+import urllib.parse
 import pandas as pd
 import requests
 import uuid
+import urllib
 
 from pathlib import Path
 from typing import TypeAlias
 
+from globus_compute_sdk import Client
+
 from dsaas_client import AUTH_ACCESS_TOKEN
-from dsaas_client import TRANSFER_ACCESS_TOKEN
 from dsaas_client.config import CONF
 from dsaas_client.error import ClientError
 from dsaas_client.utils import get_collection_metadata
-from dsaas_client.utils import serialize
+from dsaas_client.utils import get_transfer_token
+from dsaas_client.utils import PolicyEnum
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +27,8 @@ JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | 
 
 
 def register_function(func):
-    pickled_function = serialize(func)
-    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    res = requests.get(
-        f"{CONF.server_url}/function",
-        params={"function": pickled_function},
-        headers=headers,
-        verify=False,
-    )
-    return res.json()
+    gcc = Client()
+    return gcc.register_function(func)
 
 
 def list_sources() -> list[dict[str, str | int]]:
@@ -42,8 +39,15 @@ def list_sources() -> list[dict[str, str | int]]:
     """
     logger.debug("Retrieving all sources from server")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    req = requests.get(f"{CONF.server_url}/source", headers=headers, verify=False)
-    resp = json.loads(req.content)
+    req = requests.get(f"{CONF.server_url}/source", headers=headers)
+
+    try:
+        resp = json.loads(req.content)
+    except json.decoder.JSONDecodeError:
+        return {
+            "status_code": req.status_code,
+            "message": str(req.content, encoding="utf-8"),
+        }
     return resp
 
 
@@ -61,7 +65,7 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
     params = {"query": query}
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        f"{CONF.server_url}/source/search", params=params, headers=headers, verify=False
+        f"{CONF.server_url}/source/search", params=params, headers=headers
     )
     resp = json.loads(req.content)
     return resp
@@ -76,7 +80,7 @@ def source_versions(source_id: int) -> list[dict[str, str | int]]:
     logger.debug(f"Requesting all versions of source id {source_id}.")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        f"{CONF.server_url}/source/{source_id}/versions", headers=headers, verify=False
+        f"{CONF.server_url}/source/{source_id}/versions", headers=headers
     )
     resp = json.loads(req.content)
     return resp
@@ -109,16 +113,22 @@ def get_file(
         f"{CONF.server_url}/source/{source_id}/file",
         params=params,
         headers=headers,
-        verify=False,
     )
 
     if req.status_code == 200:
         # initiate Globus transfer
         sf_data = req.json()
-        url = f'{sf_data["collection_url"]}/{sf_data["file_name"]}'
 
+        print(sf_data.keys())
+        if "https://" not in sf_data["source"]["collection_url"]:
+            sf_data["source"][
+                "collection_url"
+            ] = f'https://{sf_data["source"]["collection_url"]}'
+        url = f'{sf_data["source"]["collection_url"]}/{sf_data["source_file"]["file_name"]}'
+
+        TRANSFER_TOKEN = get_transfer_token(sf_data["source"]["collection_uuid"])
         logger.debug("Initiating Globus Transfer of file.")
-        headers = {"Authorization": f"Bearer {TRANSFER_ACCESS_TOKEN}"}
+        headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
         resp = requests.get(url, headers=headers)
         try:
             df = pd.DataFrame(resp.json())
@@ -159,7 +169,10 @@ def save_output(
     Returns:
         str: the GCS UUID of the data should the client need to query it afterwards.
     """
-    headers = {"Authorization": f"Bearer {TRANSFER_ACCESS_TOKEN}"}
+    collection_md = get_collection_metadata(collection_domain)
+
+    TRANSFER_TOKEN = get_transfer_token(collection_md["DATA"][0]["id"])
+    headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
 
     filename = str(uuid.uuid4())
     url = f"{CONF.https_server}/output/{filename}"
@@ -172,7 +185,6 @@ def save_output(
         headers["Content-type"] = "application/json"
         checksum = hashlib.md5(data.encode("utf-8")).hexdigest()
 
-        collection_md = get_collection_metadata(collection_domain)
         params = {
             "output_fn": filename,
             "collection_uuid": collection_md["DATA"][0]["id"],
@@ -193,7 +205,6 @@ def save_output(
             f"{CONF.server_url}/prov/new",
             data=json.dumps(params),
             headers=headers,
-            verify=False,
         )
 
         if req.status_code == 200:
@@ -211,6 +222,8 @@ def register_flow(
     kwargs: JSON | None = None,
     config: str | None = None,
     description: str | None = None,
+    policy: PolicyEnum = PolicyEnum.NONE,
+    timer_delay: int | None = None,
 ) -> None:
     """Register user function to run as a Globus Flow on remote server periodically.
 
@@ -221,7 +234,9 @@ def register_flow(
             as value. Otherwise a list of source ids will use the latest source version. Default is None.
         kwargs (JSON, optional): Keyword arguments to pass to function. Default is None
         config (str, optional): Path to config file. Default is None.
-        description (str, optional): A description of the Flow
+        description (str | None, optional): A description of the Flow. Default is None.
+        policy (PolicyEnum, optional): Which policy to use to rerun the flow. Default is never rerun.
+        timer_delay (int | None, optional): The timer delay in seconds if PolicyEnum.TIMER is applied. Default is None.
 
     Raises:
         ClientError: if function was not able to be registered as a flow, this error is raised
@@ -243,6 +258,8 @@ def register_flow(
     data["description"] = description
     data["endpoint"] = endpoint_uuid
     data["function"] = function_uuid
+    data["policy"] = policy
+    data["timer_delay"] = timer_delay
 
     if kwargs is not None:
         data["kwargs"] = kwargs
@@ -261,7 +278,6 @@ def register_flow(
         f"{CONF.server_url}/prov/timer/{function_uuid}",
         headers=headers,
         data=json.dumps(data),
-        verify=False,
     )
     if response.status_code == 200:
         return response
@@ -301,7 +317,9 @@ def create_source(
         modifier (str, optional): Globus Compute function UUID for the modifier function. Defaults to None.
         tags
     """
-    collection_md = get_collection_metadata(collection_url)
+
+    collection_domain = urllib.parse.urlparse(collection_url).netloc
+    collection_md = get_collection_metadata(collection_domain)
 
     collection_uuid = collection_md["DATA"][0]["id"]
     data = {
@@ -326,10 +344,13 @@ def create_source(
     elif email is None:
         data["email"] = ""  # todo make email optional
 
+    # make sure user is authorized to access GCS server in flow
+    print(collection_uuid)
+    token = get_transfer_token(collection_uuid=collection_uuid)
+    print(token)
+
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    req = requests.post(
-        f"{CONF.server_url}/source", json=data, headers=headers, verify=False
-    )
+    req = requests.post(f"{CONF.server_url}/source", json=data, headers=headers)
     print(req.content)
     res = json.loads(req.content)
     return res

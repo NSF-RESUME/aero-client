@@ -10,7 +10,6 @@ from pathlib import Path
 class ClientConf:
     client_uuid: str = "c78511ef-8cf7-4802-a7e1-7d56e27b1bf8"
     endpoint_uuid: str = "6dec76ea-e7fd-492e-947e-f2a92073a275"
-    collection_uuid: str = "52f7f6bc-444f-439a-ad48-a4569d10c3d1"
     portal_client_id: str = "082d6a19-da16-4552-9944-e081cdaff7bc"
     https_server: str = "https://g-c952d0.1305de.36fe.data.globus.org"
     dsaas_dir: str = Path(Path.home(), ".local/share/dsaas")
