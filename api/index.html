@@ -14,7 +14,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.27">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.28">
     
     
       
@@ -648,23 +648,7 @@
 
             <details class="quote">
               <summary>Source code in <code>dsaas_client/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
-<span class="normal">290</span>
-<span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">294</span>
 <span class="normal">295</span>
 <span class="normal">296</span>
 <span class="normal">297</span>
@@ -705,7 +689,28 @@
 <span class="normal">332</span>
 <span class="normal">333</span>
 <span class="normal">334</span>
-<span class="normal">335</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_source</span><span class="p">(</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_source</span><span class="p">(</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">collection_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -731,7 +736,9 @@
 <span class="sd">        modifier (str, optional): Globus Compute function UUID for the modifier function. Defaults to None.</span>
 <span class="sd">        tags</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">collection_md</span> <span class="o">=</span> <span class="n">get_collection_metadata</span><span class="p">(</span><span class="n">collection_url</span><span class="p">)</span>
+
+    <span class="n">collection_domain</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">collection_url</span><span class="p">)</span><span class="o">.</span><span class="n">netloc</span>
+    <span class="n">collection_md</span> <span class="o">=</span> <span class="n">get_collection_metadata</span><span class="p">(</span><span class="n">collection_domain</span><span class="p">)</span>
 
     <span class="n">collection_uuid</span> <span class="o">=</span> <span class="n">collection_md</span><span class="p">[</span><span class="s2">&quot;DATA&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
@@ -756,10 +763,13 @@
     <span class="k">elif</span> <span class="n">email</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">data</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># todo make email optional</span>
 
+    <span class="c1"># make sure user is authorized to access GCS server in flow</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">collection_uuid</span><span class="p">)</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">get_transfer_token</span><span class="p">(</span><span class="n">collection_uuid</span><span class="o">=</span><span class="n">collection_uuid</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+
     <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">AUTH_ACCESS_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
-    <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span>
-    <span class="p">)</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">res</span>
@@ -888,11 +898,7 @@ If none provided, fetches latest version. Defaults to None.</p>
 
             <details class="quote">
               <summary>Source code in <code>dsaas_client/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
-<span class="normal"> 88</span>
-<span class="normal"> 89</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 89</span>
 <span class="normal"> 90</span>
 <span class="normal"> 91</span>
 <span class="normal"> 92</span>
@@ -936,7 +942,17 @@ If none provided, fetches latest version. Defaults to None.</p>
 <span class="normal">130</span>
 <span class="normal">131</span>
 <span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_file</span><span class="p">(</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_file</span><span class="p">(</span>
     <span class="n">source_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets the version for the source.</span>
@@ -963,16 +979,22 @@ If none provided, fetches latest version. Defaults to None.</p>
         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source/</span><span class="si">{</span><span class="n">source_id</span><span class="si">}</span><span class="s2">/file&quot;</span><span class="p">,</span>
         <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
         <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
-        <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">req</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
         <span class="c1"># initiate Globus transfer</span>
         <span class="n">sf_data</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sf_data</span><span class="p">[</span><span class="s2">&quot;collection_url&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">sf_data</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
 
+        <span class="nb">print</span><span class="p">(</span><span class="n">sf_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="s2">&quot;https://&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sf_data</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span><span class="s2">&quot;collection_url&quot;</span><span class="p">]:</span>
+            <span class="n">sf_data</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;collection_url&quot;</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://</span><span class="si">{</span><span class="n">sf_data</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span><span class="s2">&quot;collection_url&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sf_data</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span><span class="s2">&quot;collection_url&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">sf_data</span><span class="p">[</span><span class="s2">&quot;source_file&quot;</span><span class="p">][</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="n">TRANSFER_TOKEN</span> <span class="o">=</span> <span class="n">get_transfer_token</span><span class="p">(</span><span class="n">sf_data</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">][</span><span class="s2">&quot;collection_uuid&quot;</span><span class="p">])</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Initiating Globus Transfer of file.&quot;</span><span class="p">)</span>
-        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">TRANSFER_ACCESS_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">TRANSFER_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
         <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
@@ -1006,10 +1028,10 @@ If none provided, fetches latest version. Defaults to None.</p>
 
             <details class="quote">
               <summary>Source code in <code>dsaas_client/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">globus_logout</span><span class="p">():</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">globus_logout</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove the Globus Auth token file to invoke login on next API access.&quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Removing Globus auth tokens.&quot;</span><span class="p">)</span>
     <span class="n">Path</span><span class="p">(</span><span class="n">CONF</span><span class="o">.</span><span class="n">dsaas_dir</span><span class="p">,</span> <span class="n">CONF</span><span class="o">.</span><span class="n">token_file</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
@@ -1057,7 +1079,10 @@ If none provided, fetches latest version. Defaults to None.</p>
 
             <details class="quote">
               <summary>Source code in <code>dsaas_client/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">37</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
 <span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
@@ -1067,7 +1092,11 @@ If none provided, fetches latest version. Defaults to None.</p>
 <span class="normal">44</span>
 <span class="normal">45</span>
 <span class="normal">46</span>
-<span class="normal">47</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">list_sources</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">list_sources</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the dictionary of all the sources.</span>
 
 <span class="sd">    Returns:</span>
@@ -1075,8 +1104,15 @@ If none provided, fetches latest version. Defaults to None.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Retrieving all sources from server&quot;</span><span class="p">)</span>
     <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">AUTH_ACCESS_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
-    <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;status_code&quot;</span><span class="p">:</span> <span class="n">req</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
     <span class="k">return</span> <span class="n">resp</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1088,7 +1124,7 @@ If none provided, fetches latest version. Defaults to None.</p>
 
 
 <h2 id="dsaas_client.api.register_flow" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">register_flow</span><span class="p">(</span><span class="n">endpoint_uuid</span><span class="p">,</span> <span class="n">function_uuid</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">register_flow</span><span class="p">(</span><span class="n">endpoint_uuid</span><span class="p">,</span> <span class="n">function_uuid</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="n">PolicyEnum</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="n">timer_delay</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h2>
 
@@ -1183,11 +1219,39 @@ as value. Otherwise a list of source ids will use the latest source version. Def
           <tr class="doc-section-item">
             <td><code>description</code></td>
             <td>
-                  <code>str</code>
+                  <code>str | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A description of the Flow</p>
+                <p>A description of the Flow. Default is None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>policy</code></td>
+            <td>
+                  <code><span title="dsaas_client.utils.PolicyEnum">PolicyEnum</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Which policy to use to rerun the flow. Default is never rerun.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="dsaas_client.utils.PolicyEnum.NONE">NONE</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>timer_delay</code></td>
+            <td>
+                  <code>int | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The timer delay in seconds if PolicyEnum.TIMER is applied. Default is None.</p>
               </div>
             </td>
             <td>
@@ -1245,18 +1309,7 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 
             <details class="quote">
               <summary>Source code in <code>dsaas_client/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">218</span>
 <span class="normal">219</span>
 <span class="normal">220</span>
 <span class="normal">221</span>
@@ -1306,13 +1359,31 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 <span class="normal">265</span>
 <span class="normal">266</span>
 <span class="normal">267</span>
-<span class="normal">268</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_flow</span><span class="p">(</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_flow</span><span class="p">(</span>
     <span class="n">endpoint_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">function_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">sources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">kwargs</span><span class="p">:</span> <span class="n">JSON</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">policy</span><span class="p">:</span> <span class="n">PolicyEnum</span> <span class="o">=</span> <span class="n">PolicyEnum</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span>
+    <span class="n">timer_delay</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Register user function to run as a Globus Flow on remote server periodically.</span>
 
@@ -1323,7 +1394,9 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 <span class="sd">            as value. Otherwise a list of source ids will use the latest source version. Default is None.</span>
 <span class="sd">        kwargs (JSON, optional): Keyword arguments to pass to function. Default is None</span>
 <span class="sd">        config (str, optional): Path to config file. Default is None.</span>
-<span class="sd">        description (str, optional): A description of the Flow</span>
+<span class="sd">        description (str | None, optional): A description of the Flow. Default is None.</span>
+<span class="sd">        policy (PolicyEnum, optional): Which policy to use to rerun the flow. Default is never rerun.</span>
+<span class="sd">        timer_delay (int | None, optional): The timer delay in seconds if PolicyEnum.TIMER is applied. Default is None.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ClientError: if function was not able to be registered as a flow, this error is raised</span>
@@ -1345,6 +1418,8 @@ as value. Otherwise a list of source ids will use the latest source version. Def
     <span class="n">data</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
     <span class="n">data</span><span class="p">[</span><span class="s2">&quot;endpoint&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">endpoint_uuid</span>
     <span class="n">data</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">function_uuid</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;policy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">policy</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;timer_delay&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timer_delay</span>
 
     <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">data</span><span class="p">[</span><span class="s2">&quot;kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span>
@@ -1363,7 +1438,6 @@ as value. Otherwise a list of source ids will use the latest source version. Def
         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/prov/timer/</span><span class="si">{</span><span class="n">function_uuid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
         <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
         <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
-        <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">response</span>
@@ -1548,17 +1622,7 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 
             <details class="quote">
               <summary>Source code in <code>dsaas_client/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">146</span>
 <span class="normal">147</span>
 <span class="normal">148</span>
 <span class="normal">149</span>
@@ -1616,7 +1680,18 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 <span class="normal">201</span>
 <span class="normal">202</span>
 <span class="normal">203</span>
-<span class="normal">204</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">save_output</span><span class="p">(</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">save_output</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">collection_domain</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1642,7 +1717,10 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 <span class="sd">    Returns:</span>
 <span class="sd">        str: the GCS UUID of the data should the client need to query it afterwards.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">TRANSFER_ACCESS_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+    <span class="n">collection_md</span> <span class="o">=</span> <span class="n">get_collection_metadata</span><span class="p">(</span><span class="n">collection_domain</span><span class="p">)</span>
+
+    <span class="n">TRANSFER_TOKEN</span> <span class="o">=</span> <span class="n">get_transfer_token</span><span class="p">(</span><span class="n">collection_md</span><span class="p">[</span><span class="s2">&quot;DATA&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">TRANSFER_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
 
     <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
     <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">https_server</span><span class="si">}</span><span class="s2">/output/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -1655,7 +1733,6 @@ as value. Otherwise a list of source ids will use the latest source version. Def
         <span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;application/json&quot;</span>
         <span class="n">checksum</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
 
-        <span class="n">collection_md</span> <span class="o">=</span> <span class="n">get_collection_metadata</span><span class="p">(</span><span class="n">collection_domain</span><span class="p">)</span>
         <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;output_fn&quot;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
             <span class="s2">&quot;collection_uuid&quot;</span><span class="p">:</span> <span class="n">collection_md</span><span class="p">[</span><span class="s2">&quot;DATA&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
@@ -1676,7 +1753,6 @@ as value. Otherwise a list of source ids will use the latest source version. Def
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/prov/new&quot;</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">),</span>
             <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
-            <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">req</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
@@ -1758,11 +1834,7 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 
             <details class="quote">
               <summary>Source code in <code>dsaas_client/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
 <span class="normal">57</span>
@@ -1775,7 +1847,11 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 <span class="normal">64</span>
 <span class="normal">65</span>
 <span class="normal">66</span>
-<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">search_sources</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">search_sources</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the sources that match the query</span>
 
 <span class="sd">    Args:</span>
@@ -1789,7 +1865,7 @@ as value. Otherwise a list of source ids will use the latest source version. Def
     <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">}</span>
     <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">AUTH_ACCESS_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
     <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source/search&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source/search&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span>
     <span class="p">)</span>
     <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">resp</span>
@@ -1837,11 +1913,7 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 
             <details class="quote">
               <summary>Source code in <code>dsaas_client/api.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">74</span>
 <span class="normal">75</span>
 <span class="normal">76</span>
 <span class="normal">77</span>
@@ -1849,7 +1921,11 @@ as value. Otherwise a list of source ids will use the latest source version. Def
 <span class="normal">79</span>
 <span class="normal">80</span>
 <span class="normal">81</span>
-<span class="normal">82</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">source_versions</span><span class="p">(</span><span class="n">source_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">source_versions</span><span class="p">(</span><span class="n">source_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List versions given a source id.</span>
 
 <span class="sd">    Returns:</span>
@@ -1858,7 +1934,7 @@ as value. Otherwise a list of source ids will use the latest source version. Def
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Requesting all versions of source id </span><span class="si">{</span><span class="n">source_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
     <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">AUTH_ACCESS_TOKEN</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
     <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source/</span><span class="si">{</span><span class="n">source_id</span><span class="si">}</span><span class="s2">/versions&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CONF</span><span class="o">.</span><span class="n">server_url</span><span class="si">}</span><span class="s2">/source/</span><span class="si">{</span><span class="n">source_id</span><span class="si">}</span><span class="s2">/versions&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span>
     <span class="p">)</span>
     <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">resp</span>
@@ -1924,7 +2000,7 @@ as value. Otherwise a list of source ids will use the latest source version. Def
     <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.ad660dcc.min.js"></script>
+      <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
       
     
   </body>
