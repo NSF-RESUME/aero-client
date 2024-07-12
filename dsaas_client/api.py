@@ -272,6 +272,7 @@ def register_flow(
         str: the timer job uuid.
     """
 
+    tasks = []
     if kwargs is None and config is not None:
         with open(config) as f:
             tasks = json.load(f)
@@ -293,9 +294,12 @@ def register_flow(
     if len(tasks) > 1:
         data["tasks"] = tasks
 
-    for t in data["tasks"]:
-        t["endpoint"] = endpoint_uuid
-        t["function"] = function_uuid
+    if len(tasks) > 0:
+        for t in data["tasks"]:
+            t["endpoint"] = endpoint_uuid
+            t["function"] = function_uuid
+    else:
+        data["tasks"] = {"endpoint": endpoint_uuid, "function": function_uuid}
 
     headers = {
         "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
