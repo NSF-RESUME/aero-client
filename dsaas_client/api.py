@@ -167,7 +167,7 @@ def get_file(
 
 
 def save_output(
-    data: str,
+    data: str | bytes,
     name: str,
     collection_url: str,
     description: str,
@@ -178,7 +178,7 @@ def save_output(
     """Save input data to GCS and record provenance information to DSaaS.
 
     Args:
-        data (str): Currently either JSON or CSV string will work. Eventually will accept any Python object.
+        data (str | bytes): Currently either JSON or CSV string or bytes object will work. Eventually will accept any Python object.
         name (str): Identifier to associate the data with. Will eventually help with search.
         collection_url (str): The HTTPS URL of the GCS collection to store data to.
         description (str): Text-based description of the provenance of the data
@@ -209,7 +209,11 @@ def save_output(
     if resp.status_code == 200:
         ## store in DB
         headers["Content-type"] = "application/json"
-        checksum = hashlib.md5(data.encode("utf-8")).hexdigest()
+
+        if isinstance(data, bytes):
+            checksum = hashlib.md5(data).hexdigest()
+        else:
+            checksum = hashlib.md5(data.encode("utf-8")).hexdigest()
 
         params = {
             "output_fn": filename,
@@ -299,7 +303,7 @@ def register_flow(
             t["endpoint"] = endpoint_uuid
             t["function"] = function_uuid
     else:
-        data["tasks"] = {"endpoint": endpoint_uuid, "function": function_uuid}
+        data["tasks"] = {}  # {"endpoint": endpoint_uuid, "function": function_uuid}
 
     headers = {
         "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
