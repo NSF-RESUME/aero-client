@@ -46,7 +46,9 @@ def list_data(
     logger.debug("Retrieving all sources from server")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        urllib.parse.urljoin(CONF.server_url, metadata_type), headers=headers
+        urllib.parse.urljoin(CONF.server_url, metadata_type),
+        headers=headers,
+        verify=False,
     )
 
     try:
@@ -73,7 +75,7 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
     params = {"query": query}
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        f"{CONF.server_url}/source/search", params=params, headers=headers
+        f"{CONF.server_url}/source/search", params=params, headers=headers, verify=False
     )
     resp = json.loads(req.content)
     return resp
@@ -88,7 +90,7 @@ def source_versions(source_id: int) -> list[dict[str, str | int]]:
     logger.debug(f"Requesting all versions of source id {source_id}.")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        f"{CONF.server_url}/source/{source_id}/versions", headers=headers
+        f"{CONF.server_url}/source/{source_id}/versions", headers=headers, verify=False
     )
     resp = json.loads(req.content)
     return resp
@@ -125,6 +127,7 @@ def get_file(
         f"{CONF.server_url}/{ftype}/{id}/file",
         params=params,
         headers=headers,
+        verify=False,
     )
 
     if req.status_code == 200:
@@ -228,6 +231,7 @@ def save_output(
             f"{CONF.server_url}/prov/new",
             data=json.dumps(params),
             headers=headers,
+            verify=False,
         )
 
         if req.status_code == 200:
@@ -301,6 +305,7 @@ def register_flow(
         f"{CONF.server_url}/prov/timer/{function_uuid}",
         headers=headers,
         data=json.dumps(data),
+        verify=False,
     )
     if response.status_code == 200:
         return response.json()
@@ -371,6 +376,8 @@ def create_source(
     _ = get_transfer_token(collection_uuid=collection_uuid)
 
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    req = requests.post(f"{CONF.server_url}/source", json=data, headers=headers)
+    req = requests.post(
+        f"{CONF.server_url}/source", json=data, headers=headers, verify=False
+    )
     res = json.loads(req.content)
     return res
