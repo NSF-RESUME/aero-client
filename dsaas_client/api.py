@@ -156,11 +156,19 @@ def get_file(
         try:
             df = pd.DataFrame(resp.json())
         except Exception:
-            df = pd.read_table(io.StringIO(resp.text), sep=",")
+            try:
+                df = pd.read_table(io.StringIO(resp.text), sep=",")
+            except Exception:
+                df = resp.content
 
         if output_path is not None:
             logger.debug("Saving Pandas DataFrame locally.")
-            df.to_json(output_path)
+
+            if isinstance(df, bytes):
+                with open(output_path, "wb+") as f:
+                    f.write(df)
+            else:
+                df.to_json(output_path)
         return df
     else:
         raise ClientError(req.status_code, req.text)

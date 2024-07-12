@@ -224,7 +224,8 @@ def main():
                 version=args.version,
                 output_path=args.output_path,
             )
-            print(file.head(5))
+            if not isinstance(file, bytes):
+                print(file.head(5))
         except ClientError as e:
             print(e)
 
