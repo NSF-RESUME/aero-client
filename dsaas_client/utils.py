@@ -12,6 +12,7 @@ from globus_sdk import NativeAppAuthClient
 from globus_sdk import RefreshTokenAuthorizer
 from globus_sdk import TransferClient
 
+
 from dsaas_client.config import CONF
 from dsaas_client.error import ClientError
 
@@ -70,7 +71,7 @@ def _client_auth() -> str:
             "openid",
             "profile",
             "email",
-            "urn:globus:auth:scope:transfer.api.globus.org:all",
+            TransferClient.scopes.all,
         ]
         token_response = authenticate(client=client, scope=scopes)
 
@@ -105,13 +106,16 @@ def get_transfer_token(collection_uuid: str) -> str:
     if collection_uuid in tokens:
         transfer_token = tokens[collection_uuid]["access_token"]
         ref_transfer_token = tokens[collection_uuid]["refresh_token"]
-        _ = RefreshTokenAuthorizer(refresh_token=ref_transfer_token, auth_client=client)
+        rta = RefreshTokenAuthorizer(
+            refresh_token=ref_transfer_token, auth_client=client
+        )
+        transfer_token = rta.get_authorization_header().split(" ")[-1]
         return transfer_token
 
     else:
         scopes = [
             f"https://auth.globus.org/scopes/{collection_uuid}/https",
-            "urn:globus:auth:scope:transfer.api.globus.org:all",
+            TransferClient.scopes.all,
         ]
 
         token_response = authenticate(client=client, scope=scopes)

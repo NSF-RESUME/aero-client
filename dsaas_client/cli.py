@@ -3,11 +3,13 @@ import argparse
 import json
 import logging
 
+from pprint import pprint
+
 
 from dsaas_client.api import create_source
 from dsaas_client.api import get_file
 from dsaas_client.api import globus_logout
-from dsaas_client.api import list_sources
+from dsaas_client.api import list_data
 from dsaas_client.api import search_sources
 from dsaas_client.api import source_versions
 
@@ -31,6 +33,14 @@ def main():
     _ = subparsers.add_parser("logout", help="Log out of Globus auth")
 
     parser.add_argument("-l", "--log", type=str, default="INFO", help="Set log level")
+
+    list_parser.add_argument(
+        "-t",
+        "--type",
+        choices=["source", "prov", "output"],
+        default="source",
+        help="List all metadata of a certain type of data. Defaults to 'source'",
+    )
 
     list_parser.add_argument(
         "-s",
@@ -107,10 +117,17 @@ def main():
 
     # Get parser arguments
     get_parser.add_argument(
-        "-sid",
-        "--source-id",
+        "-t",
+        "--type",
         required=True,
-        help="source id of the source to fetch",
+        choices=["source", "output"],
+        help="The file type to fetch",
+    )
+    get_parser.add_argument(
+        "-i",
+        "--id",
+        required=True,
+        help="source/output id of the file to fetch",
     )
     get_parser.add_argument(
         "-ver",
@@ -182,12 +199,12 @@ def main():
             else:
                 print(json.dumps(versions, indent=4))
         else:
-            print(json.dumps(list_sources(), indent=4))
+            print(json.dumps(list_data(args.type), indent=4))
 
     # elif args.list_proxies:
     #    print(json.dumps(all_proxies(), indent=4))
     elif args.command == "create":
-        create_source(
+        res = create_source(
             name=args.name,
             url=args.url,
             collection_url=args.collection_url,
@@ -198,10 +215,12 @@ def main():
             modifier=args.modifier,
             email=args.email,
         )
+        pprint(res)
     elif args.command == "get":
         try:
             file = get_file(
-                source_id=args.source_id,
+                ftype=args.type,
+                id=args.id,
                 version=args.version,
                 output_path=args.output_path,
             )

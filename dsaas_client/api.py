@@ -10,6 +10,7 @@ import uuid
 import urllib
 
 from pathlib import Path
+from typing import Literal
 from typing import TypeAlias
 
 from globus_compute_sdk import Client
@@ -31,15 +32,22 @@ def register_function(func):
     return gcc.register_function(func)
 
 
-def list_sources() -> list[dict[str, str | int]]:
+def list_data(
+    metadata_type: Literal["source", "prov", "output"],
+) -> list[dict[str, str | int]]:
     """Get the dictionary of all the sources.
+
+    Args:
+        metadata_type (Literal["source", "prov", "output"]): List metadata of a certain type.
 
     Returns:
         list[dict[str, str | int ]]: a list containing all available sources data
     """
     logger.debug("Retrieving all sources from server")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    req = requests.get(f"{CONF.server_url}/source", headers=headers)
+    req = requests.get(
+        urllib.parse.urljoin(CONF.server_url, metadata_type), headers=headers
+    )
 
     try:
         resp = json.loads(req.content)
@@ -87,12 +95,16 @@ def source_versions(source_id: int) -> list[dict[str, str | int]]:
 
 
 def get_file(
-    source_id: int, version: int | None = None, output_path: str | None = None
+    ftype: Literal["source", "output"],
+    id: int,
+    version: int | None = None,
+    output_path: str | None = None,
 ) -> pd.DataFrame:
     """Gets the version for the source.
 
     Args:
-        source_id (int): ID of the source data to fetch
+        ftype (Literal["source", "output"]): the type of data to fetch.
+        id (int): ID of the source or output data to fetch
         version (int, optional): Version of the source data to fetch.
             If none provided, fetches latest version. Defaults to None.
         output_path (str, optional): Path to save data to.
@@ -110,23 +122,31 @@ def get_file(
     logger.debug("Retrieving filename of specified source.")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        f"{CONF.server_url}/source/{source_id}/file",
+        f"{CONF.server_url}/{ftype}/{id}/file",
         params=params,
         headers=headers,
     )
 
     if req.status_code == 200:
         # initiate Globus transfer
-        sf_data = req.json()
+        f_data = req.json()
 
-        print(sf_data.keys())
-        if "https://" not in sf_data["source"]["collection_url"]:
-            sf_data["source"][
-                "collection_url"
-            ] = f'https://{sf_data["source"]["collection_url"]}'
-        url = f'{sf_data["source"]["collection_url"]}/{sf_data["source_file"]["file_name"]}'
+        if ftype == "source":
+            if "https://" not in f_data["source"]["collection_url"]:
+                f_data["source"][
+                    "collection_url"
+                ] = f'https://{f_data["source"]["collection_url"]}'
+            url = urllib.parse.urljoin(
+                f'{f_data["source"]["collection_url"]}/',
+                f_data["source_file"]["file_name"],
+            )
+            TRANSFER_TOKEN = get_transfer_token(f_data["source"]["collection_uuid"])
+        else:
+            url = urllib.parse.urljoin(
+                f'{f_data["output"]["url"]}/', f_data["filename"]
+            )
+            TRANSFER_TOKEN = get_transfer_token(f_data["output"]["collection_uuid"])
 
-        TRANSFER_TOKEN = get_transfer_token(sf_data["source"]["collection_uuid"])
         logger.debug("Initiating Globus Transfer of file.")
         headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
         resp = requests.get(url, headers=headers)
@@ -146,7 +166,7 @@ def get_file(
 def save_output(
     data: str,
     name: str,
-    collection_domain: str,
+    collection_url: str,
     description: str,
     sources: dict[int, int] = {},
     function_uuid: str | None = None,
@@ -157,7 +177,7 @@ def save_output(
     Args:
         data (str): Currently either JSON or CSV string will work. Eventually will accept any Python object.
         name (str): Identifier to associate the data with. Will eventually help with search.
-        collection_domain (str): The domain of the GCS Guest collection to store data to. Data will be stored in its root.
+        collection_url (str): The HTTPS URL of the GCS collection to store data to.
         description (str): Text-based description of the provenance of the data
         sources (dict[int | int]): A dictionary of DSaaS source ids and versions that contributed to the production of this data. Defaults to {}.
         function_uuid (str, optional): The UUID of the function used to process the data. Defaults to ''.
@@ -169,13 +189,16 @@ def save_output(
     Returns:
         str: the GCS UUID of the data should the client need to query it afterwards.
     """
+
+    collection_domain = urllib.parse.urlparse(collection_url).netloc
+
     collection_md = get_collection_metadata(collection_domain)
 
     TRANSFER_TOKEN = get_transfer_token(collection_md["DATA"][0]["id"])
     headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
 
     filename = str(uuid.uuid4())
-    url = f"{CONF.https_server}/output/{filename}"
+    url = urllib.parse.urljoin(collection_url, filename)
 
     # store in GCS
     resp = requests.put(url, headers=headers, data=data)
@@ -188,7 +211,7 @@ def save_output(
         params = {
             "output_fn": filename,
             "collection_uuid": collection_md["DATA"][0]["id"],
-            "collection_url": collection_md["DATA"][0]["https_server"],
+            "url": collection_url,
             "function_uuid": function_uuid,
             "sources": sources,
             "name": name,
@@ -280,8 +303,8 @@ def register_flow(
         data=json.dumps(data),
     )
     if response.status_code == 200:
-        return response
-    raise ClientError(response.status_code, response.text)
+        return response.json()
+    raise ClientError(response.status_code, response.content)
 
 
 # TODO: Fix bug where it'll request to login if tokens are not present
@@ -345,12 +368,9 @@ def create_source(
         data["email"] = ""  # todo make email optional
 
     # make sure user is authorized to access GCS server in flow
-    print(collection_uuid)
-    token = get_transfer_token(collection_uuid=collection_uuid)
-    print(token)
+    _ = get_transfer_token(collection_uuid=collection_uuid)
 
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.post(f"{CONF.server_url}/source", json=data, headers=headers)
-    print(req.content)
     res = json.loads(req.content)
     return res
