@@ -6,14 +6,14 @@ import logging
 from pprint import pprint
 
 
-from dsaas_client.api import create_source
-from dsaas_client.api import get_file
-from dsaas_client.api import globus_logout
-from dsaas_client.api import list_data
-from dsaas_client.api import search_sources
-from dsaas_client.api import source_versions
+from aero_client.api import create_source
+from aero_client.api import get_file
+from aero_client.api import globus_logout
+from aero_client.api import list_data
+from aero_client.api import search_sources
+from aero_client.api import source_versions
 
-from dsaas_client.error import ClientError
+from aero_client.error import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def main():
         description="DSaaS client for querying stored data",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available actions")
-    list_parser = subparsers.add_parser("list", help="List all stored sources")
+    list_parser = subparsers.add_parser("list", help="List monitored data")
     create_parser = subparsers.add_parser(
         "create", help="Create a source to store in DSaas"
     )
@@ -37,17 +37,17 @@ def main():
     list_parser.add_argument(
         "-t",
         "--type",
-        choices=["source", "prov", "output"],
-        default="source",
-        help="List all metadata of a certain type of data. Defaults to 'source'",
+        choices=["data", "flow", "provenance"],
+        default="data",
+        help="List metadata related to monitored data, flows or provenance. Defaults to `data`",
     )
 
     list_parser.add_argument(
         "-s",
-        "--source-id",
+        "--data-id",
         type=int,
         required=False,
-        help="list all versions associated with provided source id",
+        help="list all versions associated with provided data id",
     )
 
     # create_parser arguments
@@ -192,7 +192,7 @@ def main():
 
     # actions
     if args.command == "list":
-        if args.source_id is not None:
+        if args.data_id is not None:
             versions = source_versions(args.source_id)
             if len(versions) == 0:
                 print("No versions available.")

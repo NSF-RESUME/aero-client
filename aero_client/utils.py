@@ -1,4 +1,5 @@
 """DSaaS client util module"""
+
 import codecs
 import dill
 import json
@@ -13,8 +14,8 @@ from globus_sdk import RefreshTokenAuthorizer
 from globus_sdk import TransferClient
 
 
-from dsaas_client.config import CONF
-from dsaas_client.error import ClientError
+from aero_client.config import CONF
+from aero_client.error import ClientError
 
 
 _REDIRECT_URI = "https://auth.globus.org/v2/web/auth-code"
@@ -150,3 +151,92 @@ def get_collection_metadata(domain: str) -> None:
     return TransferClient(authorizer=authorizer).endpoint_search(
         domain.replace(".data.globus.org", "")
     )
+
+
+def download(*args, **kwargs):
+    """Download data from user-specified repository.
+
+    Returns:
+        tuple[str, str]: Path to the data and its
+            associated extension.
+    """
+    import hashlib
+    import pathlib
+    import requests
+    import uuid
+    from mimetypes import guess_extension
+    from pathlib import Path
+
+    from aero_client.config import CONF
+    from aero_client.utils import load_tokens
+
+    if "temp_dir" in kwargs:
+        TEMP_DIR = kwargs["temp_dir"]
+    else:
+        TEMP_DIR = pathlib.Path.home() / "aero"
+        kwargs["temp_dir"] = str(TEMP_DIR)
+
+    tokens = load_tokens()
+    auth_token = tokens[CONF.portal_client_id]["refresh_token"]
+
+    headers = {"Authorization": f"Bearer {auth_token}"}
+
+    response = requests.get(
+        f'{CONF.server_url}/source/{kwargs["source_id"]}', headers=headers, verify=False
+    )
+    source = response.json()
+
+    response = requests.get(source["url"])
+    content_type = response.headers["content-type"]
+    ext = guess_extension(content_type.split(";")[0])
+
+    bn = str(uuid.uuid4())
+    fn = Path(TEMP_DIR, bn)
+
+    TEMP_DIR.mkdir(exist_ok=True, parents=True)
+
+    with open(fn, "w+") as f:
+        f.write(response.content.decode("utf-8"))
+
+    kwargs["file"] = str(fn)
+    kwargs["file_bn"] = bn
+    kwargs["file_format"] = ext
+    kwargs["checksum"] = hashlib.md5(response.content).hexdigest()
+    kwargs["size"] = fn.stat().st_size
+    kwargs["download"] = True
+
+    return args, kwargs
+
+
+def aero_ingestion(func):
+    """AERO decorator that wraps user validation and transformation."""
+
+    pass
+    # def wrap(*args, **kwargs):
+    #     download(*args, **kwargs)
+    #     result = func(*args, **kwargs)
+    #     database_commit(*args, **kwargs)
+
+    #     print(func.__name__, end - start)
+    #     return result
+
+    # return wrap
+
+
+def aero_analysis(fn: callable):
+    def wrapper(*args, **kwargs):
+        analysis_in = {}
+        kw = kwargs["kwargs"]
+
+        assert "aero" in kw.keys()
+
+        analysis_in.update(**kwargs["aero"]["input_data"])
+        analysis_in.update(**kwargs["function_args"])
+
+        outputs = fn(**analysis_in)
+        for out in outputs:
+            kwargs["aero"]["output_data"][out["name"]].update(**out)
+
+        return kwargs
+
+    return wrapper

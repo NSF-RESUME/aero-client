@@ -15,12 +15,12 @@ from typing import TypeAlias
 
 from globus_compute_sdk import Client
 
-from dsaas_client import AUTH_ACCESS_TOKEN
-from dsaas_client.config import CONF
-from dsaas_client.error import ClientError
-from dsaas_client.utils import get_collection_metadata
-from dsaas_client.utils import get_transfer_token
-from dsaas_client.utils import PolicyEnum
+from aero_client import AUTH_ACCESS_TOKEN
+from aero_client.config import CONF
+from aero_client.error import ClientError
+from aero_client.utils import get_collection_metadata
+from aero_client.utils import get_transfer_token
+from aero_client.utils import PolicyEnum
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,7 @@ def list_data(
     """
     logger.debug("Retrieving all sources from server")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+    print(headers)
     req = requests.get(
         urllib.parse.urljoin(CONF.server_url, metadata_type),
         headers=headers,
