@@ -43,7 +43,7 @@ def transform(*args, **kwargs):
     )
 
     odata["year_day"] = odata["num_date"] - (52 * 365) - 12
-    odata["new_time"] = odata["year_day"] - 43
+    odata['new_time'] = odata['year_day'] - (odata['year_day'].iloc[0]-1)
 
     # calculate values
     odata["sum_genes"] = odata["gene_copy"]
