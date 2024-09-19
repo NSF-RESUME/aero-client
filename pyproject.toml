@@ -27,7 +27,7 @@ docs = [
 ]
 
 [project.scripts]
-aero = "dsaas_client.cli:main"
+aero = "aero_client.cli:main"
 
 [build-system]
 # These are the assumed default build requirements from pip:

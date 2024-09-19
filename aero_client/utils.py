@@ -224,18 +224,20 @@ def aero_ingestion(func):
 
 
 def aero_analysis(fn: callable):
+    """AERO decorator that wraps user analysis function to capture provenance information."""
+
     def wrapper(*args, **kwargs):
         analysis_in = {}
-        kw = kwargs["kwargs"]
 
-        assert "aero" in kw.keys()
+        assert "aero" in kwargs.keys()
 
         analysis_in.update(**kwargs["aero"]["input_data"])
         analysis_in.update(**kwargs["function_args"])
 
         outputs = fn(**analysis_in)
         for out in outputs:
-            kwargs["aero"]["output_data"][out["name"]].update(**out)
+            name = out.pop("name", None)
+            kwargs["aero"]["output_data"][name].update(**out)
 
         return kwargs
 
