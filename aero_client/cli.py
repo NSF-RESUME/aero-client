@@ -12,7 +12,6 @@ from aero_client.api import get_file
 from aero_client.api import globus_logout
 from aero_client.api import list_data
 from aero_client.api import search_sources
-from aero_client.api import source_versions
 
 from aero_client.error import ClientError
 
@@ -45,8 +44,8 @@ def main():
 
     list_parser.add_argument(
         "-i",
-        "--data-id",
-        type=int,
+        "--id",
+        type=str,
         required=False,
         help="list all versions associated with provided data id",
     )
@@ -193,8 +192,8 @@ def main():
 
     # actions
     if args.command == "list":
-        if args.data_id is not None:
-            versions = source_versions(args.source_id)
+        if args.id is not None:
+            versions = list_data(args.type, args.id)
             if len(versions) == 0:
                 print("No versions available.")
             else:

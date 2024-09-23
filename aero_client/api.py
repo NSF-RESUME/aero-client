@@ -34,7 +34,7 @@ def register_function(func):
 
 
 def list_data(
-    metadata_type: Literal["source", "prov", "flow"],
+    metadata_type: Literal["source", "prov", "flow"], id: str | None = None
 ) -> list[dict[str, str | int]]:
     """Get the dictionary of all the sources.
 
@@ -46,12 +46,19 @@ def list_data(
     """
     logger.debug("Retrieving all sources from server")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    print(headers)
-    req = requests.get(
-        urllib.parse.urljoin(CONF.server_url, metadata_type),
-        headers=headers,
-        verify=False,
-    )
+
+    if id is not None:
+        req = requests.get(
+            urllib.parse.urljoin(CONF.server_url, metadata_type),
+            headers=headers,
+            verify=False,
+        )
+    else:
+        req = requests.get(
+            urllib.parse.urljoin(CONF.server_url, metadata_type, id),
+            headers=headers,
+            verify=False,
+        )
 
     try:
         resp = json.loads(req.content)
