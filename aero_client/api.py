@@ -1,4 +1,5 @@
 """DSaaS client API module"""
+
 import hashlib
 import io
 import json
@@ -33,12 +34,12 @@ def register_function(func):
 
 
 def list_data(
-    metadata_type: Literal["source", "prov", "output"],
+    metadata_type: Literal["source", "prov", "flow"],
 ) -> list[dict[str, str | int]]:
     """Get the dictionary of all the sources.
 
     Args:
-        metadata_type (Literal["source", "prov", "output"]): List metadata of a certain type.
+        metadata_type (Literal["data", "prov", "flow"]): List metadata of a certain type.
 
     Returns:
         list[dict[str, str | int ]]: a list containing all available sources data
@@ -258,8 +259,9 @@ def save_output(
 def register_flow(
     endpoint_uuid: str,
     function_uuid: str,
-    sources: dict[int | int] | list[int] | None = None,
-    kwargs: JSON | None = None,
+    input_data: dict[str | dict[str | int | None]] = {},
+    output_data: dict[str | dict[str, str]] = {},
+    kwargs: JSON = {},
     config: str | None = None,
     description: str | None = None,
     policy: PolicyEnum = PolicyEnum.NONE,
@@ -270,8 +272,11 @@ def register_flow(
     Args:
         endpoint_uuid (str): Globus Compute endpoint uuid
         function_uuid (str): Globus Compute registered function UUID
-        sources(dict[int | int], list[int], optional): The input sources. A dict can be provided to include source version
-            as value. Otherwise a list of source ids will use the latest source version. Default is None.
+        input_data (dict[str | dict[str, uuid | int]],  optional): The input data,
+            presented in the format {"name": {"id": <aero_id>, "version": <version no. or None>}}.
+            Default is None.
+        output_data (dict[str | dict[str, str]], optional): The output data that will be created,
+            presented in the format {"name": {"url": <url to fetch the data>}}. Default is None.
         kwargs (JSON, optional): Keyword arguments to pass to function. Default is None
         config (str, optional): Path to config file. Default is None.
         description (str | None, optional): A description of the Flow. Default is None.
@@ -286,7 +291,7 @@ def register_flow(
     """
 
     tasks = []
-    if kwargs is None and config is not None:
+    if len(kwargs.keys()) == 0 and config is not None:
         with open(config) as f:
             tasks = json.load(f)
 
@@ -295,31 +300,31 @@ def register_flow(
     # assuming that it's running on our endpoint
 
     data = {}
-    data["sources"] = sources
+    data["input_data"] = input_data
+    data["output_data"] = output_data
     data["description"] = description
-    data["endpoint"] = endpoint_uuid
-    data["function"] = function_uuid
-    data["policy"] = policy
+    data["gc_endpoint"] = endpoint_uuid
+    data["function_uuid"] = function_uuid
+    data["flow_kwargs"] = kwargs
+    data["rule"] = policy
     data["timer_delay"] = timer_delay
 
-    if kwargs is not None:
-        data["kwargs"] = kwargs
     if len(tasks) > 1:
         data["tasks"] = tasks
 
-    if len(tasks) > 0:
-        for t in data["tasks"]:
-            t["endpoint"] = endpoint_uuid
-            t["function"] = function_uuid
-    else:
-        data["tasks"] = {}  # {"endpoint": endpoint_uuid, "function": function_uuid}
+    # if len(tasks) > 0:
+    #     for t in data["tasks"]:
+    #         t["endpoint"] = endpoint_uuid
+    #         t["function"] = function_uuid
+    # else:
+    #     data["tasks"] = {}  # {"endpoint": endpoint_uuid, "function": function_uuid}
 
     headers = {
         "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
         "Content-type": "application/json",
     }
     response = requests.post(
-        f"{CONF.server_url}/prov/timer/{function_uuid}",
+        f"{CONF.server_url}/flow/register",
         headers=headers,
         data=json.dumps(data),
         verify=False,

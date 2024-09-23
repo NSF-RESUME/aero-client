@@ -8,6 +8,7 @@ import logging
 from enum import IntEnum
 from pathlib import Path
 
+from globus_compute_sdk import Client as ComputeClient
 from globus_sdk import AccessTokenAuthorizer
 from globus_sdk import NativeAppAuthClient
 from globus_sdk import RefreshTokenAuthorizer
@@ -25,10 +26,11 @@ logger = logging.getLogger(__name__)
 
 
 class PolicyEnum(IntEnum):
-    TIMER = 0
-    ANY = 1
-    ALL = 2
-    NONE = 3
+    NONE = -1
+    INGESTION = 0
+    TIMER = 1
+    ANY = 2
+    ALL = 3
 
 
 def serialize(obj) -> str:
@@ -223,21 +225,41 @@ def aero_ingestion(func):
     # return wrap
 
 
-def aero_analysis(fn: callable):
+def register_function(fn: callable):
+    """Registers function with Globus Compute by registering the function with the wrapper"""
+    gcc = ComputeClient()
+    func_uuid = gcc.register_function(aero_format(fn))
+    return func_uuid
+
+
+def aero_format(fn: callable):
     """AERO decorator that wraps user analysis function to capture provenance information."""
 
     def wrapper(*args, **kwargs):
-        analysis_in = {}
+        fn_in = {}
 
         assert "aero" in kwargs.keys()
 
-        analysis_in.update(**kwargs["aero"]["input_data"])
-        analysis_in.update(**kwargs["function_args"])
+        if "output_data" in kwargs["aero"]:
+            for name, val in kwargs["aero"]["output_data"].items():
+                if "file" in val:
+                    fn_in[name] = val
+        if "input_data" in kwargs["aero"]:
+            fn_in.update(**kwargs["aero"]["input_data"])
 
-        outputs = fn(**analysis_in)
-        for out in outputs:
-            name = out.pop("name", None)
-            kwargs["aero"]["output_data"][name].update(**out)
+        aero_args = kwargs.pop("aero")
+        fn_in.update(**kwargs)
+
+        outputs = fn(**fn_in)
+        kwargs["aero"] = aero_args
+
+        if isinstance(outputs, list):
+            for out in outputs:
+                name = out.pop("name", None)
+                kwargs["aero"]["output_data"][name].update(**out)
+        else:
+            name = outputs.pop("name", None)
+            kwargs["aero"]["output_data"][name].update(**outputs)
 
         return kwargs
 

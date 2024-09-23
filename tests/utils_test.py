@@ -1,4 +1,4 @@
-from aero_client.utils import aero_analysis
+from aero_client.utils import aero_format
 
 
 def test_analysis_decorator():
@@ -28,7 +28,7 @@ def test_analysis_decorator():
         "flow_id": "flow10",
     }
 
-    output_kwargs = aero_analysis(user_function)(**task_kwargs)
+    output_kwargs = aero_format(user_function)(**task_kwargs)
     assert output_kwargs["aero"]["output_data"]["output_data1"] == {
         "id": "3456",
         "checksum": "1234",
@@ -42,3 +42,35 @@ def test_analysis_decorator():
     }
 
     assert "flow_id" in output_kwargs.keys()
+
+
+def test_ingestion_decorator():
+    def user_function(output_data, arg1, arg2):
+        assert output_data == {"id": "3456", "file": "/tmp/test"}
+        assert arg1 == ["apples", "bananas", "pears"]
+        assert arg2 == 9999
+
+        return [
+            {"name": "output_data", "checksum": "1234", "size": 2},
+        ]
+
+    task_kwargs = {
+        "aero": {
+            "output_data": {
+                "output_data": {"id": "3456", "file": "/tmp/test"},
+            },
+        },
+        "function_args": {"arg1": ["apples", "bananas", "pears"], "arg2": 9999},
+        "flow_id": "flow10",
+    }
+
+    output_kwargs = aero_format(user_function)(**task_kwargs)
+
+    assert output_kwargs["aero"]["output_data"] == {
+        "output_data": {
+            "id": "3456",
+            "file": "/tmp/test",
+            "checksum": "1234",
+            "size": 2,
+        }
+    }

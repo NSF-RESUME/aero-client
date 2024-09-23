@@ -1,4 +1,5 @@
 """Osprey Command-line interface."""
+
 import argparse
 import json
 import logging
@@ -37,13 +38,13 @@ def main():
     list_parser.add_argument(
         "-t",
         "--type",
-        choices=["data", "flow", "provenance"],
+        choices=["data", "flow", "prov"],
         default="data",
         help="List metadata related to monitored data, flows or provenance. Defaults to `data`",
     )
 
     list_parser.add_argument(
-        "-s",
+        "-i",
         "--data-id",
         type=int,
         required=False,
