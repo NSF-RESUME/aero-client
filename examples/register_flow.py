@@ -4,9 +4,9 @@ from aero_client.utils import PolicyEnum
 
 def register_ingestion():
     endpoint_uuid = "87e6579f-3408-41ee-9429-6559eb8cb713"  # update to be your endpoint
-    function_uuid = "97571dc9-c288-4b0e-b36f-e294a1d81db7"  # update to be you function
+    function_uuid = "f6200dd8-726d-4541-9116-825ea36bda04"  # update to be you function
     output_data = {
-        "output": {  # key here needs to match the name of your parameter, will also be the name of the record in the db
+        "myoutput": {  # key here needs to match the name of your parameter, will also be the name of the record in the db
             "url": "https://iwss.uillinois.edu/wastewater-treatment-plant/download/169/",
             "collection_uuid": "52f7f6bc-444f-439a-ad48-a4569d10c3d1",
             "collection_url": "https://g-c952d0.1305de.36fe.data.globus.org/",
@@ -29,7 +29,7 @@ def register_ingestion():
 
 def register_analysis():
     endpoint_uuid = "87e6579f-3408-41ee-9429-6559eb8cb713"  # update to your endpoint
-    function_uuid = "a1632617-aa9e-47ca-8c7f-8edc8de84c1d"  # update to be you function
+    function_uuid = "124be92f-49f6-4268-8833-6823667b92db"  # update to be you function
     function_args = {
         "arg1": 4,
         "arg2": 2,
@@ -37,7 +37,7 @@ def register_analysis():
 
     input_data = {
         "in1": {
-            "id": "25ae2b8a-a109-4207-8260-ba53500ed258",
+            "id": "a0580e9e-d50a-475e-8b6a-043ad061ec88",
             "version": None,
         }  # need to update id post ingestion and key name needs to match parameter name in function
     }

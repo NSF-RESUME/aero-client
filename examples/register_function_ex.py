@@ -2,22 +2,22 @@ from aero_client.utils import register_function
 
 
 def my_analysis(in1, arg1, arg2):
-    from datetime import datetime
+    from pathlib import Path
 
-    return {
-        "name": "out1",
-        "file_bn": "myfilename",
-        "file_format": "json",
-        "checksum": "2222",
-        "size": 300,
-        "created_at": datetime.now().ctime(),
-    }
+    from aero_client.utils import AeroOutput
+
+    assert Path(in1).exists()
+
+    return AeroOutput(name="out1", path=in1)
 
 
-def my_ingestion(output):
-    from datetime import datetime
+def my_ingestion(myoutput):
+    from aero_client.utils import AeroOutput
 
-    return {"name": "output", "created_at": datetime.now().ctime()}
+    with open(myoutput, "wb+") as f:
+        f.write(bytes("mybinaryoutput", encoding="utf-8"))
+
+    return AeroOutput(name="myoutput", path=myoutput)
 
 
 print(register_function(my_analysis))

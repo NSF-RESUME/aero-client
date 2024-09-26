@@ -2,9 +2,16 @@
 
 import codecs
 import dill
+import hashlib
 import json
 import logging
+import mimetypes
+import requests
+import urllib
+import uuid
 
+from dataclasses import dataclass
+from datetime import datetime
 from enum import IntEnum
 from pathlib import Path
 
@@ -31,6 +38,12 @@ class PolicyEnum(IntEnum):
     TIMER = 1
     ANY = 2
     ALL = 3
+
+
+@dataclass
+class AeroOutput:
+    name: str
+    path: str
 
 
 def serialize(obj) -> str:
@@ -210,21 +223,6 @@ def download(*args, **kwargs):
     return args, kwargs
 
 
-def aero_ingestion(func):
-    """AERO decorator that wraps user validation and transformation."""
-
-    pass
-    # def wrap(*args, **kwargs):
-    #     download(*args, **kwargs)
-    #     result = func(*args, **kwargs)
-    #     database_commit(*args, **kwargs)
-
-    #     print(func.__name__, end - start)
-    #     return result
-
-    # return wrap
-
-
 def register_function(fn: callable):
     """Registers function with Globus Compute by registering the function with the wrapper"""
     gcc = ComputeClient()
@@ -232,8 +230,48 @@ def register_function(fn: callable):
     return func_uuid
 
 
+def gcs_save(path: str, collection_url: str, collection_uuid: str) -> dict:
+    # collection_domain = urllib.parse.urlparse(collection_url).netloc
+
+    TRANSFER_TOKEN = get_transfer_token(collection_uuid)
+    headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
+
+    filename = str(uuid.uuid4())
+    url = urllib.parse.urljoin(collection_url, filename)
+
+    mtype = mimetypes.guess_type(path)
+
+    if "text" not in mtype:
+        with open(path, "rb") as f:
+            data = f.read()
+            checksum = hashlib.md5(data).hexdigest()
+    else:
+        with open(path, "r") as f:
+            data = f.read()
+            checksum = hashlib.md5(data.encode("utf-8")).hexdigest()
+
+    # store in GCS
+    resp = requests.put(url, headers=headers, data=data)
+
+    Path(path).unlink()  # remove tmp output
+
+    assert resp.status_code == 200, resp.content
+
+    return {
+        "created_at": datetime.now().ctime(),
+        "checksum": checksum,
+        "size": len(data),
+        "file_bn": filename,
+        "file_format": mtype,
+    }
+
+
 def aero_format(fn: callable):
     """AERO decorator that wraps user analysis function to capture provenance information."""
+    import requests
+    import urllib
+
+    from pathlib import Path
 
     def wrapper(*args, **kwargs):
         fn_in = {}
@@ -243,23 +281,66 @@ def aero_format(fn: callable):
         if "output_data" in kwargs["aero"]:
             for name, val in kwargs["aero"]["output_data"].items():
                 if "file" in val:
-                    fn_in[name] = val
+                    fn_in[name] = val["file"]
         if "input_data" in kwargs["aero"]:
-            fn_in.update(**kwargs["aero"]["input_data"])
+            for name, val in kwargs["aero"]["input_data"].items():
+                TRANSFER_TOKEN = get_transfer_token(val["collection_uuid"])
+                headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
+
+                resp = requests.get(
+                    urllib.parse.urljoin(
+                        f"{val['collection_url']}/", f"{val['file_bn']}"
+                    ),
+                    headers=headers,
+                )
+
+                if "tmp_dir" not in val:
+                    val["tmp_dir"] = "/tmp"
+
+                tmp_path = Path(val["tmp_dir"]) / val["file_bn"]
+                with open(tmp_path, "wb+") as f:
+                    f.write(resp.content)
+                fn_in[name] = str(tmp_path)
 
         aero_args = kwargs.pop("aero")
         fn_in.update(**kwargs)
 
         outputs = fn(**fn_in)
+
         kwargs["aero"] = aero_args
 
         if isinstance(outputs, list):
-            for out in outputs:
-                name = out.pop("name", None)
-                kwargs["aero"]["output_data"][name].update(**out)
+            for ao in outputs:
+                name = ao.name
+                metadata = gcs_save(
+                    path=ao.path,
+                    collection_url=kwargs["aero"]["output_data"][name][
+                        "collection_url"
+                    ],
+                    collection_uuid=kwargs["aero"]["output_data"][name][
+                        "collection_uuid"
+                    ],
+                )
+                kwargs["aero"]["output_data"][name].update(**metadata)
         else:
-            name = outputs.pop("name", None)
-            kwargs["aero"]["output_data"][name].update(**outputs)
+            assert isinstance(
+                outputs, AeroOutput
+            ), "ERROR: function output is not an AeroOutput"
+            name = outputs.name
+            metadata = gcs_save(
+                path=outputs.path,
+                collection_url=kwargs["aero"]["output_data"][name]["collection_url"],
+                collection_uuid=kwargs["aero"]["output_data"][name]["collection_uuid"],
+            )
+
+            if "url" in kwargs["aero"]["output_data"][name].keys():
+                metadata.pop("checksum", None)
+            kwargs["aero"]["output_data"][name].update(**metadata)
+
+        # remove tmp data
+        for k, v in fn_in.items():
+            if isinstance(v, str) and Path(v).exists():
+                Path(v).unlink()
 
         return kwargs
 
