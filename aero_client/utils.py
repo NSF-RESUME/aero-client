@@ -339,7 +339,11 @@ def aero_format(fn: callable):
 
         # remove tmp data
         for k, v in fn_in.items():
-            if isinstance(v, str) and Path(v).exists():
+            if (
+                k in kwargs["aero"]["input_data"]
+                and isinstance(v, str)
+                and Path(v).exists()
+            ):
                 Path(v).unlink()
 
         return kwargs
