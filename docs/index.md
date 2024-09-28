@@ -11,23 +11,23 @@ pip install git+https://github.com/NSF-RESUME/DSaaS-client
 ## CLI
 
 List all available data
-```
+```bash
 dsaas list
 ```
 
 Create a data source
-```
+```bash
 dsaas create -n <name> -u <url> -e <email>
 ```
 
 Get a specific source file
-```
+```bash
 dsaas get --source_id <source_id>
 ```
 
 ## Creating verifier and modifier functions
 
-```
+```python
 
 # From dsaas_client/example.py
 
