@@ -11,6 +11,7 @@ import uuid
 import urllib
 
 from pathlib import Path
+from typing import Generator
 from typing import Literal
 from typing import TypeAlias
 
@@ -36,58 +37,60 @@ def register_function(func):
     return gcc.register_function(func)
 
 
-def list_data(
-    metadata_type: Literal["source", "prov", "flow"],
-    id: str | None = None,
-) -> list[dict[str, str | int]]:
-    """Get the dictionary of all the sources.
+def list_versions(data_id: str) -> JSON:
+    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+    url = urllib.parse.urljoin(CONF.server_url, f"data/{data_id}/versions")
+    print(url)
+    req = session.get(
+        url=url,
+        headers=headers,
+        verify=False,
+    )
+
+    try:
+        return req.json()
+    except requests.exceptions.JSONDecodeError:
+        return {
+            "status_code": req.status_code,
+            "message": str(req.content, encoding="utf-8"),
+        }
+
+
+def list_metadata(
+    metadata_type: Literal["data", "prov", "flow"],
+) -> Generator[JSON, JSON, JSON]:
+    """Get the metadata records.
 
     Args:
         metadata_type (Literal["data", "prov", "flow"]): List metadata of a certain type.
 
     Returns:
-        list[dict[str, str | int ]]: a list containing all available sources data
+        Generation[JSON]: a generator returning up to 15 metadata records at a time.
     """
     logger.debug("Retrieving all sources from server")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
 
-    if id is not None:
-        req = session.get(
-            urllib.parse.urljoin(CONF.server_url, metadata_type, id),
-            headers=headers,
-            verify=False,
-        )
-        return req.json()
-    else:
-        url = urllib.parse.urljoin(CONF.server_url, metadata_type)
-        req = session.get(
-            url=url,
-            headers=headers,
-            verify=False,
-        )
+    url = urllib.parse.urljoin(CONF.server_url, metadata_type)
+    req = session.get(
+        url=url,
+        headers=headers,
+        verify=False,
+    )
 
-        try:
+    try:
+        yield req.json()
+
+        page = 1
+
+        while req.status_code == 200:
+            page += 1
+            req = session.get(url, headers=headers, params={"page": page})
             yield req.json()
-
-            page = 1
-
-            while req.status_code == 200:
-                page += 1
-                req = session.get(url, headers=headers, params={"page": page})
-                yield req.json()
-        except requests.exceptions.JSONDecodeError:
-            return {
-                "status_code": req.status_code,
-                "message": str(req.content, encoding="utf-8"),
-            }
-
-    # if req.status_code != 200:
-    #     return {
-    #         "status_code": req.status_code,
-    #         "message": str(req.content, encoding="utf-8"),
-    #     }
-
-    return req.json()
+    except requests.exceptions.JSONDecodeError:
+        return {
+            "status_code": req.status_code,
+            "message": str(req.content, encoding="utf-8"),
+        }
 
 
 def search_sources(query: str) -> list[dict[str, str | int]]:

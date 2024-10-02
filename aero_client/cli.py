@@ -10,7 +10,8 @@ from pprint import pprint
 from aero_client.api import create_source
 from aero_client.api import get_file
 from aero_client.api import globus_logout
-from aero_client.api import list_data
+from aero_client.api import list_metadata
+from aero_client.api import list_versions
 from aero_client.api import search_sources
 
 from aero_client.error import ClientError
@@ -34,7 +35,8 @@ def main():
 
     parser.add_argument("-l", "--log", type=str, default="INFO", help="Set log level")
 
-    list_parser.add_argument(
+    lp_g = list_parser.add_mutually_exclusive_group()
+    lp_g.add_argument(
         "-t",
         "--type",
         choices=["data", "flow", "prov"],
@@ -42,7 +44,7 @@ def main():
         help="List metadata related to monitored data, flows or provenance. Defaults to `data`",
     )
 
-    list_parser.add_argument(
+    lp_g.add_argument(
         "-i",
         "--id",
         type=str,
@@ -193,17 +195,19 @@ def main():
     # actions
     if args.command == "list":
         if args.id is not None:
-            versions = list_data(args.type, args.id)
+            versions = list(list_versions(args.id))
             if len(versions) == 0:
                 print("No versions available.")
             else:
                 print(json.dumps(versions, indent=4))
         else:
-            for page in list_data(args.type):
+            for page in list_metadata(args.type):
                 print(json.dumps(page, indent=4))
-                ctn = input("Press enter to continue or q to quit")
-                if ctn == "q":
+                try:
+                    _ = input("Press enter to continue or CTRL-D to quit")
+                except EOFError:
                     break
+
             # print(json.dumps(list_data(args.type), indent=4))
 
     # elif args.list_proxies:
