@@ -104,9 +104,16 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
     params = {"query": query}
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        f"{CONF.server_url}/source/search", params=params, headers=headers, verify=False
+        f"{CONF.server_url}/data/search", params=params, headers=headers, verify=False
     )
-    resp = json.loads(req.content)
+
+    try:
+        resp = req.json()
+    except requests.exceptions.JSONDecodeError:
+        resp = {
+            "status_code": req.status_code,
+            "message": str(req.content, encoding="utf-8"),
+        }
     return resp
 
 
