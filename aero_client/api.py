@@ -40,7 +40,6 @@ def register_function(func):
 def list_versions(data_id: str) -> JSON:
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     url = urllib.parse.urljoin(CONF.server_url, f"data/{data_id}/versions")
-    print(url)
     req = session.get(
         url=url,
         headers=headers,
