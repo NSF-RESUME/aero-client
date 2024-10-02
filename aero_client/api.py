@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
+# tmp fix
+session = requests.Session()
+
 
 def register_function(func):
     gcc = Client()
@@ -34,7 +37,8 @@ def register_function(func):
 
 
 def list_data(
-    metadata_type: Literal["source", "prov", "flow"], id: str | None = None
+    metadata_type: Literal["source", "prov", "flow"],
+    id: str | None = None,
 ) -> list[dict[str, str | int]]:
     """Get the dictionary of all the sources.
 
@@ -48,26 +52,42 @@ def list_data(
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
 
     if id is not None:
-        req = requests.get(
-            urllib.parse.urljoin(CONF.server_url, metadata_type),
-            headers=headers,
-            verify=False,
-        )
-    else:
-        req = requests.get(
+        req = session.get(
             urllib.parse.urljoin(CONF.server_url, metadata_type, id),
             headers=headers,
             verify=False,
         )
+        return req.json()
+    else:
+        url = urllib.parse.urljoin(CONF.server_url, metadata_type)
+        req = session.get(
+            url=url,
+            headers=headers,
+            verify=False,
+        )
 
-    try:
-        resp = json.loads(req.content)
-    except json.decoder.JSONDecodeError:
-        return {
-            "status_code": req.status_code,
-            "message": str(req.content, encoding="utf-8"),
-        }
-    return resp
+        try:
+            yield req.json()
+
+            page = 1
+
+            while req.status_code == 200:
+                page += 1
+                req = session.get(url, headers=headers, params={"page": page})
+                yield req.json()
+        except requests.exceptions.JSONDecodeError:
+            return {
+                "status_code": req.status_code,
+                "message": str(req.content, encoding="utf-8"),
+            }
+
+    # if req.status_code != 200:
+    #     return {
+    #         "status_code": req.status_code,
+    #         "message": str(req.content, encoding="utf-8"),
+    #     }
+
+    return req.json()
 
 
 def search_sources(query: str) -> list[dict[str, str | int]]:

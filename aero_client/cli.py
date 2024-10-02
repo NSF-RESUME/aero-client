@@ -199,7 +199,12 @@ def main():
             else:
                 print(json.dumps(versions, indent=4))
         else:
-            print(json.dumps(list_data(args.type), indent=4))
+            for page in list_data(args.type):
+                print(json.dumps(page, indent=4))
+                ctn = input("Press enter to continue or q to quit")
+                if ctn == "q":
+                    break
+            # print(json.dumps(list_data(args.type), indent=4))
 
     # elif args.list_proxies:
     #    print(json.dumps(all_proxies(), indent=4))
