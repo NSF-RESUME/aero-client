@@ -33,11 +33,24 @@ logger = logging.getLogger(__name__)
 
 
 class PolicyEnum(IntEnum):
+    """
+    Enum for the types of policies supported by AERO.
+    """
+
     NONE = -1
+    """No policy."""
+
     INGESTION = 0
+    """Data ingestion policy."""
+
     TIMER = 1
+    """Timer-based policy."""
+
     ANY = 2
+    """..."""
+
     ALL = 3
+    """..."""
 
 
 @dataclass

@@ -1,4 +1,14 @@
-"""DSaaS client config module"""
+"""
+DSaaS client config module  Hello?
+
+```mermaid
+flowchart LR
+
+    A-->B
+    B-->C
+```
+"""
+
 import os
 from dataclasses import dataclass
 from dataclasses import field
@@ -8,7 +18,15 @@ from pathlib import Path
 # TODO: maybe move to a configuration file
 @dataclass
 class ClientConf:
+    """
+    Configuration for the AERO client.
+    """
+
     client_uuid: str = "c78511ef-8cf7-4802-a7e1-7d56e27b1bf8"
+    """
+    ...
+    """
+
     endpoint_uuid: str = "6dec76ea-e7fd-492e-947e-f2a92073a275"
     portal_client_id: str = "082d6a19-da16-4552-9944-e081cdaff7bc"
     https_server: str = "https://g-c952d0.1305de.36fe.data.globus.org"

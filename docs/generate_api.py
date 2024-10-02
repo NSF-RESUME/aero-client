@@ -7,7 +7,7 @@ import mkdocs_gen_files
 nav = mkdocs_gen_files.Nav()
 
 project_dir = "aero_client"
-reference_dir = "ref"
+reference_dir = "docs"
 excludes = []
 
 
@@ -53,6 +53,8 @@ sorted_paths = sorted(
     key=cmp_to_key(comparator),
 )
 
+print(sorted_paths)
+
 for path in sorted_paths:
     print(f"❯ Processing `{path}`...")
     skip = False
@@ -89,9 +91,12 @@ for path in sorted_paths:
 
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         ident = ".".join(parts)
+        print(f"mkdocs_gen_files :: {ident}")
         fd.write(f"# {parts[-1]}\n\n::: {ident}")
 
+    print(f"{full_doc_path=}")
     mkdocs_gen_files.set_edit_path(full_doc_path, path)
 
 with mkdocs_gen_files.open(f"{reference_dir}/SUMMARY.md", "w") as nav_file:
-    nav_file.writelines(nav.build_literate_nav())
+    nav = nav.build_literate_nav()
+    nav_file.writelines(nav)

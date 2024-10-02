@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    """
+    TODO
+    """
     parser = argparse.ArgumentParser(
         description="DSaaS client for querying stored data",
     )

@@ -1,17 +1,19 @@
+![AERO](static/img/aero-flow.png)
+
 # Data Streaming as a Service (DSaaS)
 
 DSaaS is a service that enables users to upload, periodically update and share data between users.
 
 ## Installation
 
-```
+```sh
 pip install git+https://github.com/NSF-RESUME/DSaaS-client
 ```
 
 ## CLI
 
 List all available data
-```bash
+```sh
 dsaas list
 ```
 
@@ -21,13 +23,13 @@ dsaas create -n <name> -u <url> -e <email>
 ```
 
 Get a specific source file
-```bash
+```sh
 dsaas get --source_id <source_id>
 ```
 
 ## Creating verifier and modifier functions
 
-```python
+```py
 
 # From dsaas_client/example.py
 

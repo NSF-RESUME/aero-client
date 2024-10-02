@@ -2,55 +2,41 @@ site_name: Aero-Client
 repo_name: NSF-RESUME/aero-client
 repo_url: https://github.com/NSF-RESUME/aero-client
 
-plugins:
-  - mermaid2
-  - search
-  - section-index
-  - gen-files:
-      scripts:
-        - docs/generate_api.py
-  - literate-nav:
-      nav_file: SUMMARY.md
-  - mkdocstrings:
-      custom_templates: docs/_templates
-      enable_inventory: true
-      handlers:
-        python:
-          setup_commands:
-            - import pytkdocs_tweaks
-            - pytkdocs_tweaks.main()
-          paths: [ aero_client ]
-          load_external_modules: true
-          inherited_members: true
-          options:
-            docstring_section_style: spacy # list
-            docstring_style: google
-            group_by_category: true
-            # inherited_members: yes
-            line_length: 60
-            members_order: alphabetical  # source
-            merge_init_into_class: yes
-            separate_signature: yes
-            show_root_full_path: yes
-            show_signature_annotations: yes
-            show_source: true
-            show_submodules: false
-            show_labels: true
-            # summary: true
-
 
 nav:
   - Home: index.md
-  - References: ref/
+  - Getting Started:
+    - Registering Automated Flows: registering_flows.md
+  - References: docs/
+
+
+copyright:
+  Copyright &copy; 2023 - 2024 Globus Labs, University of Chicago.
+
+#################################################################################
+#################################################################################
+#################################################################################
+
+# extra:
+#   social:
+#     - icon: fontawesome/brands/slack
+#       link: https://join.slack.com/t/funcx/shared_invite/zt-gfeclqkz-RuKjkZkvj1t~eWvlnZV0KA
+#       name: Join the funcX Slack!
+#     - icon: fontawesome/brands/github
+#       link: https://github.com/nathaniel-hudson/FLoX
+
+extra_css:
+  - static/css/extra.css
+  - static/css/mkdocstrings.css
+  - static/css/youtube.css
+  - static/css/api.css
+
 
 watch:
   - aero_client/
   - docs/
-
-
-#################################################################################
-#################################################################################
-#################################################################################
+  - mkdocs.yml
+  - README.md
 
 
 theme:
@@ -60,7 +46,6 @@ theme:
     logo: material/weather-windy
     favicon: material/weather-windy
     repo: fontawesome/brands/github-alt
-  #  favicon: ...
   font:
     text: Open Sans
     code: JetBrains Mono
@@ -94,12 +79,66 @@ theme:
       primary: deep purple
       accent: purple
 
+
+plugins:
+  - search
+  - section-index
+  
+  - mermaid2:
+      version: 10.0.2
+  
+  - gen-files:
+      scripts:
+        - docs/generate_api.py
+  
+  - literate-nav:
+      nav_file: SUMMARY.md
+  
+  - mkdocstrings:
+      custom_templates: docs/_templates
+      enable_inventory: true
+      handlers:
+        python:
+          # setup_commands:
+          #   - import pytkdocs_tweaks
+          #   - pytkdocs_tweaks.main()
+          paths: [ aero_client ]
+          load_external_modules: true
+          inherited_members: true
+          options:
+            docstring_section_style: spacy # list
+            docstring_style: google
+            group_by_category: true
+            # inherited_members: yes
+            line_length: 60
+            members_order: alphabetical  # source
+            merge_init_into_class: yes
+            separate_signature: yes
+            show_root_full_path: yes
+            show_signature_annotations: yes
+            show_source: false
+            show_submodules: true
+            show_labels: true
+
+#####################################################################################
+#####################################################################################
+#####################################################################################
+
+
 markdown_extensions:
+  # Enable mermaid rendering in Markdown blocks.
+  - pymdownx.superfences:
+        # make exceptions to highlighting of code:
+        custom_fences:
+          - name: mermaid
+            class: mermaid
+            format: !!python/name:mermaid2.fence_mermaid_custom
+
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
-      # Math typesetting
+  # Math typesetting
   - pymdownx.arithmatex:
       generic: true
 
@@ -111,19 +150,14 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.details
-  - pymdownx.superfences:
-      # make exceptions to highlighting of code:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:mermaid2.fence_mermaid_custom
   - pymdownx.mark
   - footnotes
   - attr_list
 
-      # Javascript for math typesetting
+
+# Javascript for math typesetting
 extra_javascript:
   - https://unpkg.com/browse/mermaid@11.0.2/dist/mermaid.min.js
-  - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - javascripts/mathjax.js
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
