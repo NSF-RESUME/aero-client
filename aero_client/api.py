@@ -83,7 +83,7 @@ def list_metadata(
 
         while req.status_code == 200:
             page += 1
-            req = session.get(url, headers=headers, params={"page": page})
+            req = session.get(url, headers=headers, params={"page": page}, verify=False)
             yield req.json()
     except requests.exceptions.JSONDecodeError:
         return {
