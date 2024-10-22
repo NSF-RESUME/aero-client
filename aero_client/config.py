@@ -1,12 +1,5 @@
 """
-DSaaS client config module  Hello?
-
-```mermaid
-flowchart LR
-
-    A-->B
-    B-->C
-```
+DSaaS client config module.
 """
 
 import os

@@ -1,14 +1,5 @@
 """
-The AERO client module...
-
-Now I'm able to make changes to the docstrings!!
-
-```mermaid
-flowchart LR
-
-    A-->B
-    B-->C
-```
+The AERO client module.
 """
 
 from aero_client.utils import _client_auth
