@@ -1,3 +1,7 @@
+"""
+Example of the AERO client in use.
+"""
+
 from aero_client.api import get_file, ClientError, register_function, create_source
 # from osprey.server.lib.globus_compute import register_function
 

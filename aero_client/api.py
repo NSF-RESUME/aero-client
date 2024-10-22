@@ -13,7 +13,7 @@ import urllib
 from pathlib import Path
 from typing import Generator
 from typing import Literal
-from typing import TypeAlias
+from typing import Callable, TypeAlias
 
 from globus_compute_sdk import Client
 
@@ -32,7 +32,10 @@ JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | 
 session = requests.Session()
 
 
-def register_function(func):
+def register_function(func: Callable):
+    """
+    Register function to a Globus Compute Client.
+    """
     gcc = Client()
     return gcc.register_function(func)
 
@@ -232,11 +235,11 @@ def save_output(
         function_uuid (str, optional): The UUID of the function used to process the data. Defaults to ''.
         kwargs: (JSON, optional): Input arguments to the function in JSON format. Defaults to None.
 
-    Raises:
+    Throws:
         ClientError: if DSaaS or GCS were not able to update properly, this error is raised
 
     Returns:
-        str: the GCS UUID of the data should the client need to query it afterwards.
+        The GCS UUID of the data should the client need to query it afterwards.
     """
 
     collection_domain = urllib.parse.urlparse(collection_url).netloc

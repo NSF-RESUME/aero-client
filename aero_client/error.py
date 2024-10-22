@@ -2,6 +2,10 @@
 
 
 class ClientError(Exception):
+    """
+    Error for the AERO client.
+    """
+
     def __init__(self, *args: object, **kwargs) -> None:
         self.code = kwargs.get("code", 500)
         self.message = kwargs.get("message", "Unexpected error")
