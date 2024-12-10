@@ -4,10 +4,8 @@ import argparse
 import json
 import logging
 
-from pprint import pprint
 
-
-from aero_client.api import create_source
+# from aero_client.api import create_source
 from aero_client.api import get_file
 from aero_client.api import globus_logout
 from aero_client.api import list_metadata
@@ -212,19 +210,19 @@ def main():
 
     # elif args.list_proxies:
     #    print(json.dumps(all_proxies(), indent=4))
-    elif args.command == "create":
-        res = create_source(
-            name=args.name,
-            url=args.url,
-            collection_url=args.collection_url,
-            endpoint_uuid=args.endpoint_uuid,
-            timer=args.timer,
-            description=args.description,
-            verifier=args.verifier,
-            modifier=args.modifier,
-            email=args.email,
-        )
-        pprint(res)
+    # elif args.command == "create":
+    #     res = create_source(
+    #         name=args.name,
+    #         url=args.url,
+    #         collection_url=args.collection_url,
+    #         endpoint_uuid=args.endpoint_uuid,
+    #         timer=args.timer,
+    #         description=args.description,
+    #         verifier=args.verifier,
+    #         modifier=args.modifier,
+    #         email=args.email,
+    #     )
+    #     pprint(res)
     elif args.command == "get":
         try:
             file = get_file(

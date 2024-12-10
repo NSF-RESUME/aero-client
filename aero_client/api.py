@@ -335,6 +335,12 @@ def register_flow(
             kwargs = tasks[0]
     # assuming that it's running on our endpoint
 
+    # hack to ensure trailing slashes in URLs
+    # TODO: fix
+    for k, v in output_data.items():
+        if v["collection_url"][-1] != "/":
+            v["collection_url"] += "/"
+
     data = {}
     data["input_data"] = input_data
     data["output_data"] = output_data
@@ -375,67 +381,3 @@ def globus_logout():
     """Remove the Globus Auth token file to invoke login on next API access."""
     logger.debug("Removing Globus auth tokens.")
     Path(CONF.dsaas_dir, CONF.token_file).unlink()
-
-
-def create_source(
-    name: str,
-    url: str,
-    collection_url: str,
-    endpoint_uuid: str,
-    email: str,
-    timer: int | None = None,
-    description: str | None = None,
-    verifier: str | None = None,
-    modifier: str | None = None,
-    tags: str | None = None,
-) -> None:
-    """Create a source and store it in the database/server.
-
-    Args:
-        name (str): Source name
-        url (str): URL to fetch the source data from
-        collection_url (str): Globus collection domain to store source into.
-        endpoint_uuid (str): Globus Compute Endpoint to use
-        email (str): Email to send timer flow updates to.
-        timer (int, optional): Update timer frequency in seconds. Defaults to None.
-        description (str, optional): Description of the data. Defaults to None.
-        verifier (str, optional): Globus Compute function UUID for the verification function. Defaults to None.
-        modifier (str, optional): Globus Compute function UUID for the modifier function. Defaults to None.
-        tags
-    """
-
-    collection_domain = urllib.parse.urlparse(collection_url).netloc
-    collection_md = get_collection_metadata(collection_domain)
-
-    collection_uuid = collection_md["DATA"][0]["id"]
-    data = {
-        "name": name,
-        "url": url,
-        "collection_url": collection_url,
-        "collection_uuid": collection_uuid,
-        "user_endpoint": endpoint_uuid,
-    }
-    if timer is not None:
-        data["timer"] = timer
-    if description is not None:
-        data["description"] = description
-    if verifier is not None:
-        data["verifier"] = verifier
-    if modifier is not None:
-        data["modifier"] = modifier
-    if email is not None:
-        data["email"] = email
-    if tags is not None:
-        data["tags"] = tags
-    elif email is None:
-        data["email"] = ""  # todo make email optional
-
-    # make sure user is authorized to access GCS server in flow
-    _ = get_transfer_token(collection_uuid=collection_uuid)
-
-    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    req = requests.post(
-        f"{CONF.server_url}/source", json=data, headers=headers, verify=False
-    )
-    res = json.loads(req.content)
-    return res
