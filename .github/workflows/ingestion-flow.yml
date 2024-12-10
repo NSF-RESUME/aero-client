@@ -1,0 +1,34 @@
+name: AERO ingestion example
+
+on:
+  schedule:
+    - cron: "0 0 * * *" 
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "greet"
+  ingestion:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Runs a single command using the runners shell
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.10
+        cache: 'pip'
+    - name: Install Globus Compute
+      run: pip install globus-compute-sdk
+    - name: Run download
+      run: echo 'test'
+      id: download
+    - name: Run custom-user-function
+      run: echo 'test'
+      id: custom-uf
+    - name: Run database-commit
+      run: echo 'test'
+      id: db-commit
+
+    
