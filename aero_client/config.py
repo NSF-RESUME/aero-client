@@ -21,7 +21,9 @@ class ClientConf:
     """
 
     endpoint_uuid: str = "6dec76ea-e7fd-492e-947e-f2a92073a275"
-    portal_client_id: str = "082d6a19-da16-4552-9944-e081cdaff7bc"
+    portal_client_id: str = os.getenv(
+        "PORTAL_CLIENT_ID"
+    )  # v"082d6a19-da16-4552-9944-e081cdaff7bc"
     https_server: str = "https://g-c952d0.1305de.36fe.data.globus.org"
     dsaas_dir: str = Path(Path.home(), ".local/share/dsaas")
     token_file: str = "client_tokens.json"
@@ -31,8 +33,10 @@ class ClientConf:
     def __post_init__(self):
         if (test := os.getenv("DSAAS_TESTENV")) is not None and int(test) == 1:
             self.server_address = "localhost:5001"
+        elif server_address := os.getenv("AERO_SERVER"):
+            self.server_address = server_address
         else:
-            self.server_address = "129.114.27.115:5001"
+            self.server_address = "aero.emews.org:5001"
         self.server_url = f"https://{self.server_address}/osprey/api/v1.0/"
 
 

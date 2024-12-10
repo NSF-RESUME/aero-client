@@ -266,7 +266,7 @@ def gcs_save(path: str, collection_url: str, collection_uuid: str) -> dict:
     # store in GCS
     resp = requests.put(url, headers=headers, data=data)
 
-    Path(path).unlink()  # remove tmp output
+    Path(path).unlink(missing_ok=True)  # remove tmp output
 
     assert resp.status_code == 200, resp.content
 
@@ -310,7 +310,7 @@ def aero_format(fn: callable):
                 if "tmp_dir" not in val:
                     val["tmp_dir"] = "/tmp"
 
-                tmp_path = Path(val["tmp_dir"]) / val["file_bn"]
+                tmp_path = Path(val["tmp_dir"]) / str(uuid.uuid4())
                 with open(tmp_path, "wb+") as f:
                     f.write(resp.content)
                 fn_in[name] = str(tmp_path)
@@ -353,11 +353,11 @@ def aero_format(fn: callable):
         # remove tmp data
         for k, v in fn_in.items():
             if (
-                k in kwargs["aero"]["input_data"]
+                ("input_data" in kwargs["aero"] and k in kwargs["aero"]["input_data"])
                 and isinstance(v, str)
                 and Path(v).exists()
             ):
-                Path(v).unlink()
+                Path(v).unlink(missing_ok=True)
 
         return kwargs
 

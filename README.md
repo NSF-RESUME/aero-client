@@ -1,7 +1,7 @@
-# DSaaS Client Interface
+# AERO Client Interface
 
-This interface allows users to easily store and retrieve data located on the
-[Data Streaming as as Service (DSaaS)](https://github.com/NSF-RESUME/DSaaS/) server.
+This interface allows users to register flows on the 
+[AERO](https://github.com/NSF-RESUME/DSaaS/) server.
 
 # Installation
 Clone the repository and execute

@@ -11,6 +11,7 @@ import uuid
 import urllib
 
 from pathlib import Path
+from typing import Generator
 from typing import Literal
 from typing import Callable, TypeAlias
 
@@ -27,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
+# tmp fix
+session = requests.Session()
+
 
 def register_function(func: Callable):
     """
@@ -36,41 +40,59 @@ def register_function(func: Callable):
     return gcc.register_function(func)
 
 
-def list_data(
-    metadata_type: Literal["source", "prov", "flow"], id: str | None = None
-) -> list[dict[str, str | int]]:
-    """Get the dictionary of all the sources.
+def list_versions(data_id: str) -> JSON:
+    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
+    url = urllib.parse.urljoin(CONF.server_url, f"data/{data_id}/versions")
+    req = session.get(
+        url=url,
+        headers=headers,
+        verify=False,
+    )
+
+    try:
+        return req.json()
+    except requests.exceptions.JSONDecodeError:
+        return {
+            "status_code": req.status_code,
+            "message": str(req.content, encoding="utf-8"),
+        }
+
+
+def list_metadata(
+    metadata_type: Literal["data", "prov", "flow"],
+) -> Generator[JSON, JSON, JSON]:
+    """Get the metadata records.
 
     Args:
         metadata_type (Literal["data", "prov", "flow"]): List metadata of a certain type.
 
     Returns:
-        list[dict[str, str | int ]]: a list containing all available sources data
+        Generation[JSON]: a generator returning up to 15 metadata records at a time.
     """
     logger.debug("Retrieving all sources from server")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
 
-    if id is not None:
-        req = requests.get(
-            urllib.parse.urljoin(CONF.server_url, metadata_type),
-            headers=headers,
-            verify=False,
-        )
-    else:
-        req = requests.get(
-            urllib.parse.urljoin(CONF.server_url, metadata_type, id),
-            headers=headers,
-            verify=False,
-        )
+    url = urllib.parse.urljoin(CONF.server_url, metadata_type)
+    req = session.get(
+        url=url,
+        headers=headers,
+        verify=False,
+    )
 
     try:
-        resp = json.loads(req.content)
-    except json.decoder.JSONDecodeError:
+        yield req.json()
+
+        page = 1
+
+        while req.status_code == 200:
+            page += 1
+            req = session.get(url, headers=headers, params={"page": page}, verify=False)
+            yield req.json()
+    except requests.exceptions.JSONDecodeError:
         return {
             "status_code": req.status_code,
             "message": str(req.content, encoding="utf-8"),
         }
-    return resp
 
 
 def search_sources(query: str) -> list[dict[str, str | int]]:
@@ -87,9 +109,16 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
     params = {"query": query}
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        f"{CONF.server_url}/source/search", params=params, headers=headers, verify=False
+        f"{CONF.server_url}/data/search", params=params, headers=headers, verify=False
     )
-    resp = json.loads(req.content)
+
+    try:
+        resp = req.json()
+    except requests.exceptions.JSONDecodeError:
+        resp = {
+            "status_code": req.status_code,
+            "message": str(req.content, encoding="utf-8"),
+        }
     return resp
 
 
@@ -309,6 +338,12 @@ def register_flow(
             kwargs = tasks[0]
     # assuming that it's running on our endpoint
 
+    # hack to ensure trailing slashes in URLs
+    # TODO: fix
+    for k, v in output_data.items():
+        if v["collection_url"][-1] != "/":
+            v["collection_url"] += "/"
+
     data = {}
     data["input_data"] = input_data
     data["output_data"] = output_data
@@ -349,67 +384,3 @@ def globus_logout():
     """Remove the Globus Auth token file to invoke login on next API access."""
     logger.debug("Removing Globus auth tokens.")
     Path(CONF.dsaas_dir, CONF.token_file).unlink()
-
-
-def create_source(
-    name: str,
-    url: str,
-    collection_url: str,
-    endpoint_uuid: str,
-    email: str,
-    timer: int | None = None,
-    description: str | None = None,
-    verifier: str | None = None,
-    modifier: str | None = None,
-    tags: str | None = None,
-) -> None:
-    """Create a source and store it in the database/server.
-
-    Args:
-        name (str): Source name
-        url (str): URL to fetch the source data from
-        collection_url (str): Globus collection domain to store source into.
-        endpoint_uuid (str): Globus Compute Endpoint to use
-        email (str): Email to send timer flow updates to.
-        timer (int, optional): Update timer frequency in seconds. Defaults to None.
-        description (str, optional): Description of the data. Defaults to None.
-        verifier (str, optional): Globus Compute function UUID for the verification function. Defaults to None.
-        modifier (str, optional): Globus Compute function UUID for the modifier function. Defaults to None.
-        tags
-    """
-
-    collection_domain = urllib.parse.urlparse(collection_url).netloc
-    collection_md = get_collection_metadata(collection_domain)
-
-    collection_uuid = collection_md["DATA"][0]["id"]
-    data = {
-        "name": name,
-        "url": url,
-        "collection_url": collection_url,
-        "collection_uuid": collection_uuid,
-        "user_endpoint": endpoint_uuid,
-    }
-    if timer is not None:
-        data["timer"] = timer
-    if description is not None:
-        data["description"] = description
-    if verifier is not None:
-        data["verifier"] = verifier
-    if modifier is not None:
-        data["modifier"] = modifier
-    if email is not None:
-        data["email"] = email
-    if tags is not None:
-        data["tags"] = tags
-    elif email is None:
-        data["email"] = ""  # todo make email optional
-
-    # make sure user is authorized to access GCS server in flow
-    _ = get_transfer_token(collection_uuid=collection_uuid)
-
-    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    req = requests.post(
-        f"{CONF.server_url}/source", json=data, headers=headers, verify=False
-    )
-    res = json.loads(req.content)
-    return res
