@@ -1,4 +1,6 @@
-"""DSaaS client config module"""
+"""
+DSaaS client config module.
+"""
 
 import os
 from dataclasses import dataclass
@@ -9,7 +11,15 @@ from pathlib import Path
 # TODO: maybe move to a configuration file
 @dataclass
 class ClientConf:
+    """
+    Configuration for the AERO client.
+    """
+
     client_uuid: str = "c78511ef-8cf7-4802-a7e1-7d56e27b1bf8"
+    """
+    ...
+    """
+
     endpoint_uuid: str = "6dec76ea-e7fd-492e-947e-f2a92073a275"
     portal_client_id: str = os.getenv(
         "PORTAL_CLIENT_ID"
