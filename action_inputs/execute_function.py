@@ -35,4 +35,4 @@ with Executor(endpoint_id=endpoind_uuid) as gce:
             function_id=function_uuid, **sys.argv[2]
         )
 
-    print(future.result())
+    print(f"result={future.result()}")
