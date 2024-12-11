@@ -5,6 +5,7 @@ from globus_compute_sdk import Executor
 
 endpoind_uuid = os.environ["ENDPOINT_UUID"]
 download_function_uuid = os.environ["DOWNLOAD_FUNCTION_UUID"]
+custom_function_uuid = os.environ["CUSTOM_FUNCTION_UUID"]
 
 download_inputs = {
     "rand_arg": 63712,
@@ -30,9 +31,13 @@ with Executor(endpoint_id=endpoind_uuid) as gce:
         future = gce.submit_to_registered_function(
             function_id=function_uuid, kwargs=download_inputs
         )
-    else:
+    elif function_uuid == custom_function_uuid:
         future = gce.submit_to_registered_function(
             function_id=function_uuid, kwargs=eval(sys.argv[2])[1]
+        )
+    else:
+        future = gce.submit_to_registered_function(
+            function_id=function_uuid, kwargs=eval(sys.argv[2])
         )
 
     print(f"result={future.result()}")
