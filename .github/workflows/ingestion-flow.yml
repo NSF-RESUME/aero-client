@@ -38,7 +38,7 @@ jobs:
       run: python action_inputs/execute_function.py ${{ env.CUSTOM_FUNCTION_UUID }} "${{ steps.download.outputs.result }}" >> $GITHUB_OUTPUT
       id: custom-uf
     - name: Run database-commit
-      run: python action_inputs/execute_function.py ${{ env.COMMIT_FUNCTION_UUID }} "${{ steps.custom-uf.outputs.result }}" >> $GITHUB_OUTPUT
+      run: python action_inputs/execute_function.py ${{ env.COMMIT_FUNCTION_UUID }} "${{ steps.custom-uf.outputs.result }}"
       id: db-commit
 
     
