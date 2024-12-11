@@ -32,7 +32,7 @@ with Executor(endpoint_id=endpoind_uuid) as gce:
         )
     else:
         future = gce.submit_to_registered_function(
-            function_id=function_uuid, **eval(sys.argv[2])
+            function_id=function_uuid, **eval(sys.argv[2])[1]
         )
 
     print(f"result={future.result()}")
