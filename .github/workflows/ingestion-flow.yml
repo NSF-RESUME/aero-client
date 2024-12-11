@@ -11,24 +11,32 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
+    env:
+      GLOBUS_COMPUTE_CLIENT_ID: echo ${{ secrets.GLOBUS_COMPUTE_CLIENT_ID }}
+      GLOBUS_COMPUTE_CLIENT_SECRET: echo ${{ secrets.GLOBUS_COMPUTE_CLIENT_SECRET }}
+      ENDPOINT_UUID: e05fba2c-5959-42db-a56d-ca7ba7a24818
+      DOWNLOAD_FUNCTION_UUID: 8ea8827b-66c2-4816-9202-5e370ae7d02d
+      CUSTOM_FUNCTION_UUID: cbb0f1e6-31d1-49a2-970f-eb6b374021 98
+      COMMIT_FUNCTION_UUID: 9abd2da7-29d5-4170-973c-61580ce19db2 
+      
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Runs a single command using the runners shell
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
-        python-version: 3.10
+        python-version: "3.10"
         cache: 'pip'
     - name: Install Globus Compute
       run: pip install globus-compute-sdk
     - name: Run download
-      run: echo 'test'
+      run: python action_inputs/execute_function.py ${{ env.DOWNLOAD_FUNCTION_UUID }} >> $GITHUB_OUTPUT
       id: download
     - name: Run custom-user-function
-      run: echo 'test'
+      run: python action_inputs/execute_function.py ${{ env.CUSTOM_FUNCTION_UUID }} ${{ download.outputs.* }} >> $GITHUB_OUTPUT
       id: custom-uf
     - name: Run database-commit
-      run: echo 'test'
+      run: python action_inputs/execute_function.py ${{ env.COMMIT_FUNCTION_UUID }} ${{ custom-uf.outputs.* }} >> $GITHUB_OUTPUT
       id: db-commit
 
     
