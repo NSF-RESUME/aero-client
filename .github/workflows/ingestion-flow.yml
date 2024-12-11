@@ -18,7 +18,7 @@ jobs:
       GLOBUS_COMPUTE_CLIENT_SECRET: ${{ secrets.GLOBUS_COMPUTE_CLIENT_SECRET }}
       ENDPOINT_UUID: e05fba2c-5959-42db-a56d-ca7ba7a24818
       DOWNLOAD_FUNCTION_UUID: 8ea8827b-66c2-4816-9202-5e370ae7d02d
-      CUSTOM_FUNCTION_UUID: cbb0f1e6-31d1-49a2-970f-eb6b374021
+      CUSTOM_FUNCTION_UUID: cbb0f1e6-31d1-49a2-970f-eb6b37402198
       COMMIT_FUNCTION_UUID: 9abd2da7-29d5-4170-973c-61580ce19db2 
       
     # Steps represent a sequence of tasks that will be executed as part of the job
