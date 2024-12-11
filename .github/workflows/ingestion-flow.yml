@@ -5,12 +5,11 @@ on:
     - cron: "0 0 * * *" 
   push:
     
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
   ingestion:
-    # The type of runner that the job will run on
+    strategy:
+      matrix:
+        flowid: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     runs-on: ubuntu-latest
 
     env:
