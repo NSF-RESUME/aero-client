@@ -283,10 +283,17 @@ def aero_format(fn: callable):
     """AERO decorator that wraps user analysis function to capture provenance information."""
     import requests
     import urllib
+    import time
 
     from pathlib import Path
 
     def wrapper(*args, **kwargs):
+        task_start: float
+        task_end: float
+
+        if "metrics" in kwargs:
+            task_start = time.time_ns()
+
         fn_in = {}
 
         assert "aero" in kwargs.keys()
@@ -358,6 +365,15 @@ def aero_format(fn: callable):
                 and Path(v).exists()
             ):
                 Path(v).unlink(missing_ok=True)
+
+        if "metrics" in kwargs:
+            task_end = time.time_ns()
+
+            kwargs["wrapper_metrics"] = {
+                "task_start": task_start,
+                "task_end": task_end,
+                "duration": task_end - task_start,
+            }
 
         return kwargs
 

@@ -336,7 +336,6 @@ def register_flow(
 
         if len(tasks) > 0:
             kwargs = tasks[0]
-    # assuming that it's running on our endpoint
 
     # hack to ensure trailing slashes in URLs
     # TODO: fix
@@ -356,13 +355,6 @@ def register_flow(
 
     if len(tasks) > 1:
         data["tasks"] = tasks
-
-    # if len(tasks) > 0:
-    #     for t in data["tasks"]:
-    #         t["endpoint"] = endpoint_uuid
-    #         t["function"] = function_uuid
-    # else:
-    #     data["tasks"] = {}  # {"endpoint": endpoint_uuid, "function": function_uuid}
 
     headers = {
         "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
