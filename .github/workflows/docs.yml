@@ -1,9 +1,11 @@
 name: docs
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  schedule:
+    - cron: "0 0 1 * *"
+  # push:
+  #   branches: [main]
+  # workflow_dispatch:
 
 jobs:
   docs:

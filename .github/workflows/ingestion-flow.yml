@@ -5,12 +5,11 @@ on:
     - cron: "0 0 * * *" 
   push:
     
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
   ingestion:
-    # The type of runner that the job will run on
+    strategy:
+      matrix:
+        flowid: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     runs-on: ubuntu-latest
 
     env:
@@ -38,7 +37,7 @@ jobs:
       run: python action_inputs/execute_function.py ${{ env.CUSTOM_FUNCTION_UUID }} "${{ steps.download.outputs.result }}" >> $GITHUB_OUTPUT
       id: custom-uf
     - name: Run database-commit
-      run: python action_inputs/execute_function.py ${{ env.COMMIT_FUNCTION_UUID }} "${{ steps.custom-uf.outputs.result }}" >> $GITHUB_OUTPUT
+      run: python action_inputs/execute_function.py ${{ env.COMMIT_FUNCTION_UUID }} "${{ steps.custom-uf.outputs.result }}"
       id: db-commit
 
     
