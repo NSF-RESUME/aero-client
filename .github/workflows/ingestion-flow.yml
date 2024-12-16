@@ -17,7 +17,7 @@ jobs:
       GLOBUS_COMPUTE_CLIENT_SECRET: ${{ secrets.GLOBUS_COMPUTE_CLIENT_SECRET }}
       ENDPOINT_UUID: e05fba2c-5959-42db-a56d-ca7ba7a24818
       DOWNLOAD_FUNCTION_UUID: 5ca3af28-d262-4429-b010-c89ad2f528e2
-      CUSTOM_FUNCTION_UUID: b77f10f9-8d32-410e-8b2c-74b9ae00ad34 # a272fa1b-3dc4-471b-b69c-2ce7ae195bf2
+      CUSTOM_FUNCTION_UUID: 665c919a-e0ee-44d7-b21d-b15f6f9423ca #b77f10f9-8d32-410e-8b2c-74b9ae00ad34 # a272fa1b-3dc4-471b-b69c-2ce7ae195bf2
       COMMIT_FUNCTION_UUID: 7cd724b1-64fd-461d-b946-ee0e26dc9134
       # CUSTOM_FUNC_INPUTS: "[[], {'aero': {'flow_id': 'd9bf4e2d-5b32-4c24-88a7-2fe1dd4d6628', 'input_data': {}, 'output_data': { 'out0': {'checksum': '7818c9cba4fbfac4b6e3d8802397ae2e','collection_url': 'https://g-8b681.fd635.8443.data.globus.org/valerie/','collection_uuid': 'ff01d581-69c4-44f0-bb4c-ed4484706226','download': True,'encoding': 'UTF-8','file': '/Users/valeriehayot-sasson/aero/875ba579-7531-4537-aaa1-a630174935eb','file_bn': '875ba579-7531-4537-aaa1-a630174935eb','file_format': '.txt','id': '3e4e744f-1a6c-4f7d-912f-79e9f566ad98','size': 61865984,'temp_dir': '/Users/valeriehayot-sasson/aero','tmpdir': '~/postdoc/DSaaS-client','url': 'https://g-c952d0.1305de.36fe.data.globus.org/output/synthetic_data.txt'}}},'download_metrics': { 'duration': 13028524000, 'task_end': 1734321528873406000, 'task_start': 1734321515844882000 }, 'metrics': True, 'rand_arg': 284068800 }]"
       
@@ -31,11 +31,11 @@ jobs:
         cache: 'pip'
     - name: Install Globus Compute
       run: pip install globus-compute-sdk
-    - name: Run download
-      run: python action_inputs/execute_function.py ${{ env.DOWNLOAD_FUNCTION_UUID }} >> $GITHUB_OUTPUT
-      id: download
+    # - name: Run download
+    #   run: python action_inputs/execute_function.py ${{ env.DOWNLOAD_FUNCTION_UUID }} >> $GITHUB_OUTPUT
+    #   id: download
     - name: Run custom-user-function
-      run: python action_inputs/execute_function.py ${{ env.CUSTOM_FUNCTION_UUID }} "${{ steps.download.outputs.result }}" # >> $GITHUB_OUTPUT
+      run: python action_inputs/execute_function.py ${{ env.CUSTOM_FUNCTION_UUID }} # "${{ steps.download.outputs.result }}" # >> $GITHUB_OUTPUT
     # id: custom-uf
     # - name: Run database-commit
     #   run: python action_inputs/execute_function.py ${{ env.COMMIT_FUNCTION_UUID }} "${{ steps.custom-uf.outputs.result }}"
