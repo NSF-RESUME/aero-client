@@ -34,7 +34,7 @@ with Executor(endpoint_id=endpoind_uuid) as gce:
         )
     elif function_uuid == custom_function_uuid:
         future = gce.submit_to_registered_function(
-            function_id=function_uuid, kwargs=eval(sys.argv[2])[1]
+            function_id=function_uuid #, kwargs=eval(sys.argv[2])[1]
         )
     else:
         future = gce.submit_to_registered_function(
