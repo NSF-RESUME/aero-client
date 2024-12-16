@@ -8,7 +8,7 @@ download_function_uuid = os.environ["DOWNLOAD_FUNCTION_UUID"]
 custom_function_uuid = os.environ["CUSTOM_FUNCTION_UUID"]
 
 download_inputs = {
-    "rand_arg": 63712,
+    "rand_arg": 284068800,
     "metrics": True,
     "aero": {
         "input_data": {},
