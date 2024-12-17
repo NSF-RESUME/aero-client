@@ -371,6 +371,35 @@ def register_flow(
     raise ClientError(response.status_code, response.content)
 
 
+def get_flow(flow_id: str, inputs_only: bool = True) -> dict:
+    """Get metadata on the flow provided a flow ID.
+
+    Args:
+        flow_id (str): The flow UUID
+        inputs_only (bool): Whether to return flow input data exclusively.
+            Defaults to True.
+
+    Returns:
+        dict: Flow metadata in dictionary representation.
+    """
+
+    headers = {
+        "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
+        "Content-type": "application/json",
+    }
+
+    response = requests.get(
+        f"{CONF.server_url}/flow/{flow_id}",
+        headers=headers,
+        verify=False,
+    )
+
+    if inputs_only:
+        return json.loads(response.json()["function_args"])["kwargs"]
+    else:
+        return response.json()
+
+
 # TODO: Fix bug where it'll request to login if tokens are not present
 def globus_logout():
     """Remove the Globus Auth token file to invoke login on next API access."""

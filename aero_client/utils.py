@@ -245,6 +245,7 @@ def register_function(fn: callable):
 
 def gcs_save(path: str, collection_url: str, collection_uuid: str) -> dict:
     # collection_domain = urllib.parse.urlparse(collection_url).netloc
+    import time
 
     TRANSFER_TOKEN = get_transfer_token(collection_uuid)
     headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
@@ -264,7 +265,9 @@ def gcs_save(path: str, collection_url: str, collection_uuid: str) -> dict:
             checksum = hashlib.md5(data.encode("utf-8")).hexdigest()
 
     # store in GCS
+    start = time.time_ns()
     resp = requests.put(url, headers=headers, data=data)
+    end = time.time_ns()
 
     Path(path).unlink(missing_ok=True)  # remove tmp output
 
@@ -276,6 +279,9 @@ def gcs_save(path: str, collection_url: str, collection_uuid: str) -> dict:
         "size": len(data),
         "file_bn": filename,
         "file_format": mtype,
+        "start": start,
+        "end": end,
+        "duration": (end - start) / 10**9,
     }
 
 
@@ -290,8 +296,9 @@ def aero_format(fn: callable):
     def wrapper(*args, **kwargs):
         task_start: float
         task_end: float
+        subtasks: dict[str, float] = {}
 
-        if "metrics" in kwargs:
+        if "metrics" in kwargs and kwargs["metrics"] is True:
             task_start = time.time_ns()
 
         fn_in = {}
@@ -332,6 +339,10 @@ def aero_format(fn: callable):
         if isinstance(outputs, list):
             for ao in outputs:
                 name = ao.name
+
+                if "metrics" in kwargs and kwargs["metrics"] is True:
+                    subtasks[f"gcs_{name}"] = {"task_start": time.time_ns()}
+
                 metadata = gcs_save(
                     path=ao.path,
                     collection_url=kwargs["aero"]["output_data"][name][
@@ -341,17 +352,34 @@ def aero_format(fn: callable):
                         "collection_uuid"
                     ],
                 )
+                if "metrics" in kwargs and kwargs["metrics"] is True:
+                    subtasks[f"gcs_{name}"]["task_end"] = time.time_ns()
+                    subtasks[f"gcs_{name}"]["duration"] = (
+                        subtasks[f"gcs_{name}"]["task_end"]
+                        - subtasks[f"gcs_{name}"]["task_start"]
+                    )
                 kwargs["aero"]["output_data"][name].update(**metadata)
         else:
             assert isinstance(
                 outputs, AeroOutput
             ), "ERROR: function output is not an AeroOutput"
             name = outputs.name
+
+            if "metrics" in kwargs and kwargs["metrics"] is True:
+                subtasks[f"gcs_{name}"] = {"task_start": time.time_ns()}
+
             metadata = gcs_save(
                 path=outputs.path,
                 collection_url=kwargs["aero"]["output_data"][name]["collection_url"],
                 collection_uuid=kwargs["aero"]["output_data"][name]["collection_uuid"],
             )
+
+            if "metrics" in kwargs and kwargs["metrics"] is True:
+                subtasks[f"gcs_{name}"]["task_end"] = time.time_ns()
+                subtasks[f"gcs_{name}"]["duration"] = (
+                    subtasks[f"gcs_{name}"]["task_end"]
+                    - subtasks[f"gcs_{name}"]["task_start"]
+                )
 
             if "url" in kwargs["aero"]["output_data"][name].keys():
                 metadata.pop("checksum", None)
@@ -373,6 +401,7 @@ def aero_format(fn: callable):
                 "task_start": task_start,
                 "task_end": task_end,
                 "duration": task_end - task_start,
+                "subtasks": subtasks,
             }
 
         return kwargs
