@@ -16,7 +16,7 @@ commit_function_uuid = os.environ["COMMIT_FUNCTION_UUID"]
 
 def register(endpoint_uuid, custom_function_uuid):
     import json
-    import random
+    from uuid import uuid4
     from aero_client.api import register_flow
 
     output_data = {
@@ -29,7 +29,7 @@ def register(endpoint_uuid, custom_function_uuid):
     }
 
     function_args = {
-        "rand_arg": random.randint(0, 100),
+        "rand_arg": uuid4(),
         "metrics": True,
     }  # update params as needed, keys need to match function param names
     description = "noop ingestion"
