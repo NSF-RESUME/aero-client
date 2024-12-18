@@ -29,7 +29,7 @@ def register(endpoint_uuid, custom_function_uuid):
     }
 
     function_args = {
-        "rand_arg": uuid4(),
+        "rand_arg": str(uuid4()),
         "metrics": True,
     }  # update params as needed, keys need to match function param names
     description = "noop ingestion"
