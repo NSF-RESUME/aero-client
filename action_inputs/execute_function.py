@@ -5,8 +5,6 @@ from globus_compute_sdk import Executor
 from typing import Literal
 from typing import TypeAlias
 
-from aero_client.api import register_flow
-
 
 Action: TypeAlias = Literal["register", "download", "custom", "commit"]
 
@@ -19,6 +17,7 @@ commit_function_uuid = os.environ["COMMIT_FUNCTION_UUID"]
 def register(endpoint_uuid, custom_function_uuid):
     import json
     import random
+    from aero_client.api import register_flow
 
     output_data = {
         "out0": {  # key here needs to match the name of your parameter, will also be the name of the record in the db
@@ -67,7 +66,7 @@ def run_function(act: Action, run_inputs: str | None = None):
 
 if __name__ == "__main__":
     act: Action = sys.argv[1]
-    run_inputs = sys.argv[2] if len(sys.argv) > 1 else None
+    run_inputs = sys.argv[2] if len(sys.argv) > 2 else None
 
     results = run_function(act=act, run_inputs=run_inputs)
 
