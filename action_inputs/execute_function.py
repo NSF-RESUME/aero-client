@@ -2,77 +2,73 @@ import os
 import sys
 
 from globus_compute_sdk import Executor
+from typing import Literal
+from typing import TypeAlias
+
+from aero_client.api import register_flow
+
+
+Action: TypeAlias = Literal["register", "download", "custom", "commit"]
 
 endpoind_uuid = os.environ["ENDPOINT_UUID"]
 download_function_uuid = os.environ["DOWNLOAD_FUNCTION_UUID"]
 custom_function_uuid = os.environ["CUSTOM_FUNCTION_UUID"]
+commit_function_uuid = os.environ["COMMIT_FUNCTION_UUID"]
 
-download_inputs = {
-    "rand_arg": 63712,
-    "metrics": True,
-    "aero": {
-        "input_data": {},
-        "output_data": {
-            "out0": {
-                "tmpdir": "~/postdoc/DSaaS-client",
-                "url": "https://g-c952d0.1305de.36fe.data.globus.org/output/synthetic_data.txt",
-                "collection_uuid": "ff01d581-69c4-44f0-bb4c-ed4484706226",
-                "collection_url": "https://g-8b681.fd635.8443.data.globus.org/valerie/",
-                "id": "3e4e744f-1a6c-4f7d-912f-79e9f566ad98",
-            }
-        },
-        "flow_id": "fd5691a7-5ac5-42a0-8d5a-7d30c8fc883e",
-    },
-}
 
-# args = [
-#     [],
-#     {
-#         "aero": {
-#             "flow_id": "d9bf4e2d-5b32-4c24-88a7-2fe1dd4d6628",
-#             "input_data": {},
-#             "output_data": {
-#                 "out0": {
-#                     "checksum": "7818c9cba4fbfac4b6e3d8802397ae2e",
-#                     "collection_url": "https://g-8b681.fd635.8443.data.globus.org/valerie/",
-#                     "collection_uuid": "ff01d581-69c4-44f0-bb4c-ed4484706226",
-#                     "download": True,
-#                     "encoding": "UTF-8",
-#                     "file": "/Users/valeriehayot-sasson/aero/875ba579-7531-4537-aaa1-a630174935eb",
-#                     "file_bn": "875ba579-7531-4537-aaa1-a630174935eb",
-#                     "file_format": ".txt",
-#                     "id": "3e4e744f-1a6c-4f7d-912f-79e9f566ad98",
-#                     "size": 61865984,
-#                     "temp_dir": "/Users/valeriehayot-sasson/aero",
-#                     "tmpdir": "~/postdoc/DSaaS-client",
-#                     "url": "https://g-c952d0.1305de.36fe.data.globus.org/output/synthetic_data.txt",
-#                 }
-#             },
-#         },
-#         "download_metrics": {
-#             "duration": 13028524000,
-#             "task_end": 1734321528873406000,
-#             "task_start": 1734321515844882000,
-#         },
-#         "metrics": True,
-#         "rand_arg": 284068800,
-#     },
-# ]
+def register(endpoint_uuid, custom_function_uuid):
+    import json
+    import random
 
-function_uuid = sys.argv[1]
+    output_data = {
+        "out0": {  # key here needs to match the name of your parameter, will also be the name of the record in the db
+            "tmpdir": "~/postdoc/DSaaS-client",
+            "url": "https://g-c952d0.1305de.36fe.data.globus.org/output/synthetic_data.txt",
+            "collection_uuid": "ff01d581-69c4-44f0-bb4c-ed4484706226",
+            "collection_url": "https://g-8b681.fd635.8443.data.globus.org/valerie/",
+        }
+    }
 
-with Executor(endpoint_id=endpoind_uuid) as gce:
-    if function_uuid == download_function_uuid:
-        future = gce.submit_to_registered_function(
-            function_id=function_uuid, kwargs=download_inputs
-        )
-    elif function_uuid == custom_function_uuid:
-        future = gce.submit_to_registered_function(
-            function_id=function_uuid, kwargs=eval(sys.argv[2])[1]
-        )
-    else:
-        future = gce.submit_to_registered_function(
-            function_id=function_uuid, kwargs=eval(sys.argv[2])
-        )
+    function_args = {
+        "rand_arg": random.randint(0, 9),
+        "metrics": True,
+    }  # update params as needed, keys need to match function param names
+    description = "noop ingestion"
+    fl = register_flow(
+        endpoint_uuid=endpoint_uuid,
+        function_uuid=custom_function_uuid,
+        kwargs=function_args,
+        output_data=output_data,
+        description=description,
+    )
 
-    print(f"result={future.result()}")
+    return json.loads(fl["function_args"])["kwargs"]
+
+
+def run_function(act: Action, run_inputs: str | None = None):
+    with Executor(endpoint_id=endpoind_uuid) as gce:
+        if act == "register":
+            future = gce.submit(register, endpoind_uuid, custom_function_uuid)
+        elif act == "download":
+            future = gce.submit_to_registered_function(
+                function_id=download_function_uuid, kwargs=eval(run_inputs)
+            )
+        elif act == "custom":
+            future = gce.submit_to_registered_function(
+                function_id=custom_function_uuid, kwargs=eval(run_inputs)[1]
+            )
+        else:
+            future = gce.submit_to_registered_function(
+                function_id=commit_function_uuid, kwargs=eval(run_inputs)
+            )
+
+        return future.result()
+
+
+if __name__ == "__main__":
+    act: Action = sys.argv[1]
+    run_inputs = sys.argv[2] if len(sys.argv) > 1 else None
+
+    results = run_function(act=act, run_inputs=run_inputs)
+
+    print(f"result={results}")
