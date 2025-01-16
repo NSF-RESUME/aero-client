@@ -34,10 +34,10 @@ class ClientConf:
         if (test := os.getenv("DSAAS_TESTENV")) is not None and int(test) == 1:
             self.server_address = "localhost:5001"
         elif server_address := os.getenv("AERO_SERVER"):
-            self.server_address = server_address
+            self.server_address = f"http://{server_address}"
         else:
-            self.server_address = "aero.emews.org:5001"
-        self.server_url = f"https://{self.server_address}/osprey/api/v1.0/"
+            self.server_address = "https://aero.emews.org:5001"
+        self.server_url = f"{self.server_address}/osprey/api/v1.0/"
 
 
 CONF = ClientConf()
