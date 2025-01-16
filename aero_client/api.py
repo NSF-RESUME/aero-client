@@ -1,11 +1,9 @@
 """DSaaS client API module"""
 
 import hashlib
-import io
 import json
 import logging
 import urllib.parse
-import pandas as pd
 import requests
 import uuid
 import urllib
@@ -49,6 +47,7 @@ def list_versions(data_id: str) -> JSON:
         verify=False,
     )
 
+    assert req.status_code == 200, str(req.content, encoding="utf-8")
     try:
         return req.json()
     except requests.exceptions.JSONDecodeError:
@@ -80,6 +79,7 @@ def list_metadata(
     )
 
     try:
+        assert req.status_code == 200, str(req.content, encoding="utf-8")
         yield req.json()
 
         page = 1
@@ -112,6 +112,7 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
         f"{CONF.server_url}/data/search", params=params, headers=headers, verify=False
     )
 
+    assert req.status_code == 200, str(req.content, encoding="utf-8")
     try:
         resp = req.json()
     except requests.exceptions.JSONDecodeError:
@@ -120,99 +121,6 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
             "message": str(req.content, encoding="utf-8"),
         }
     return resp
-
-
-def source_versions(source_id: int) -> list[dict[str, str | int]]:
-    """List versions given a source id.
-
-    Returns:
-        list[dict[str, str | int]]: A list of all source versions
-    """
-    logger.debug(f"Requesting all versions of source id {source_id}.")
-    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    req = requests.get(
-        f"{CONF.server_url}/source/{source_id}/versions", headers=headers, verify=False
-    )
-    resp = json.loads(req.content)
-    return resp
-
-
-def get_file(
-    ftype: Literal["source", "output"],
-    id: int,
-    version: int | None = None,
-    output_path: str | None = None,
-) -> pd.DataFrame:
-    """Gets the version for the source.
-
-    Args:
-        ftype (Literal["source", "output"]): the type of data to fetch.
-        id (int): ID of the source or output data to fetch
-        version (int, optional): Version of the source data to fetch.
-            If none provided, fetches latest version. Defaults to None.
-        output_path (str, optional): Path to save data to.
-
-    Returns:
-        pd.DataFrame: DataFrame representation of the data.
-
-    Raises:
-        ClientError: If data was unable to be transferred
-    """
-    params = {}
-    if version is not None:
-        params["version"] = version
-
-    logger.debug("Retrieving filename of specified source.")
-    headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    req = requests.get(
-        f"{CONF.server_url}/{ftype}/{id}/file",
-        params=params,
-        headers=headers,
-        verify=False,
-    )
-
-    if req.status_code == 200:
-        # initiate Globus transfer
-        f_data = req.json()
-
-        if ftype == "source":
-            if "https://" not in f_data["source"]["collection_url"]:
-                f_data["source"][
-                    "collection_url"
-                ] = f'https://{f_data["source"]["collection_url"]}'
-            url = urllib.parse.urljoin(
-                f'{f_data["source"]["collection_url"]}/',
-                f_data["source_file"]["file_name"],
-            )
-            TRANSFER_TOKEN = get_transfer_token(f_data["source"]["collection_uuid"])
-        else:
-            url = urllib.parse.urljoin(
-                f'{f_data["output"]["url"]}/', f_data["filename"]
-            )
-            TRANSFER_TOKEN = get_transfer_token(f_data["output"]["collection_uuid"])
-
-        logger.debug("Initiating Globus Transfer of file.")
-        headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
-        resp = requests.get(url, headers=headers)
-        try:
-            df = pd.DataFrame(resp.json())
-        except Exception:
-            try:
-                df = pd.read_table(io.StringIO(resp.text), sep=",")
-            except Exception:
-                df = resp.content
-
-        if output_path is not None:
-            logger.debug("Saving Pandas DataFrame locally.")
-
-            if isinstance(df, bytes):
-                with open(output_path, "wb+") as f:
-                    f.write(df)
-            else:
-                df.to_json(output_path)
-        return df
-    else:
-        raise ClientError(req.status_code, req.text)
 
 
 def save_output(
@@ -393,6 +301,8 @@ def get_flow(flow_id: str, inputs_only: bool = True) -> dict:
         headers=headers,
         verify=False,
     )
+
+    assert response.status_code == 200, str(response.content, encoding="utf-8")
 
     if inputs_only:
         return json.loads(response.json()["function_args"])["kwargs"]
