@@ -9,13 +9,13 @@ jobs:
   ingestion:
     strategy:
       matrix:
-        flowid: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] #, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        flowid: [1] #[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] #, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     runs-on: ubuntu-latest
 
     env:
       GLOBUS_COMPUTE_CLIENT_ID: ${{ secrets.GLOBUS_COMPUTE_CLIENT_ID }}
       GLOBUS_COMPUTE_CLIENT_SECRET: ${{ secrets.GLOBUS_COMPUTE_CLIENT_SECRET }}
-      ENDPOINT_UUID: e05fba2c-5959-42db-a56d-ca7ba7a24818
+      ENDPOINT_UUID: a48932e3-3a20-454b-9c1e-3aff354f3551 #e05fba2c-5959-42db-a56d-ca7ba7a24818
       DOWNLOAD_FUNCTION_UUID: 5ca3af28-d262-4429-b010-c89ad2f528e2
       CUSTOM_FUNCTION_UUID: a5f47c46-c6e7-4058-a520-c8ea091f0535 #b77f10f9-8d32-410e-8b2c-74b9ae00ad34 # a272fa1b-3dc4-471b-b69c-2ce7ae195bf2
       COMMIT_FUNCTION_UUID: 7cd724b1-64fd-461d-b946-ee0e26dc9134
