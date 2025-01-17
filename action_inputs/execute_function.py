@@ -45,7 +45,7 @@ def register(endpoint_uuid, custom_function_uuid):
 
 
 def run_function(act: Action, run_inputs: str | None = None):
-    with Executor(endpoint_id=endpoind_uuid, batch_size=1) as gce:
+    with Executor(endpoint_id=endpoind_uuid) as gce:
         if act == "register":
             future = gce.submit(register, endpoind_uuid, custom_function_uuid)
         elif act == "download":
@@ -69,5 +69,5 @@ if __name__ == "__main__":
     run_inputs = sys.argv[2] if len(sys.argv) > 2 else None
 
     results = run_function(act=act, run_inputs=run_inputs)
-
+    print("Obtained results, transferring to next step or terminating")
     print(f"result={results}")
