@@ -31,14 +31,22 @@ jobs:
     - name: Install Globus Compute
       run: pip install globus-compute-sdk
     - name: Register flow with AERO
-      run: python action_inputs/execute_function.py register >> $GITHUB_OUTPUT
+      run: |
+        python action_inputs/execute_function.py register >> $GITHUB_OUTPUT
+        echo "Step Completed"
       id: register
     - name: Run download
-      run: python action_inputs/execute_function.py download "${{ steps.register.outputs.result }}" >> $GITHUB_OUTPUT
+      run: |
+        python action_inputs/execute_function.py download "${{ steps.register.outputs.result }}" >> $GITHUB_OUTPUT
+        eho "Step Completed"
       id: download
     - name: Run custom-user-function
-      run: python action_inputs/execute_function.py custom "${{ steps.download.outputs.result }}"  >> $GITHUB_OUTPUT
+      run: |
+        python action_inputs/execute_function.py custom "${{ steps.download.outputs.result }}"  >> $GITHUB_OUTPUT
+        echo "Step Completed"
       id: custom-uf
     - name: Run database-commit
-      run: python action_inputs/execute_function.py commit "${{ steps.custom-uf.outputs.result }}"
+      run: |
+        python action_inputs/execute_function.py commit "${{ steps.custom-uf.outputs.result }}"
+        echo "Step Completed"
       id: db-commit
