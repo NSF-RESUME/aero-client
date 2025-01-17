@@ -38,7 +38,7 @@ jobs:
     - name: Run download
       run: |
         python action_inputs/execute_function.py download "${{ steps.register.outputs.result }}" >> $GITHUB_OUTPUT
-        eho "Step Completed"
+        echo "Step Completed"
       id: download
     - name: Run custom-user-function
       run: |
