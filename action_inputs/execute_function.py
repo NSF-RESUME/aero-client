@@ -69,5 +69,4 @@ if __name__ == "__main__":
     run_inputs = sys.argv[2] if len(sys.argv) > 2 else None
 
     results = run_function(act=act, run_inputs=run_inputs)
-    print("Obtained results, transferring to next step or terminating")
     print(f"result={results}")
