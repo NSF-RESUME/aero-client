@@ -45,7 +45,7 @@ def register(endpoint_uuid, custom_function_uuid):
 
 
 def run_function(act: Action, run_inputs: str | None = None):
-    with Executor(endpoint_id=endpoind_uuid) as gce:
+    with Executor(endpoint_id=endpoind_uuid, batch_size=1) as gce:
         if act == "register":
             future = gce.submit(register, endpoind_uuid, custom_function_uuid)
         elif act == "download":
