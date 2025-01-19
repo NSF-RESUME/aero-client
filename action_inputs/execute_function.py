@@ -1,6 +1,7 @@
 import os
 import sys
 
+from globus_compute_sdk import Client
 from globus_compute_sdk import Executor
 from typing import Literal
 from typing import TypeAlias
@@ -8,7 +9,7 @@ from typing import TypeAlias
 
 Action: TypeAlias = Literal["register", "download", "custom", "commit"]
 
-endpoind_uuid = os.environ["ENDPOINT_UUID"]
+endpoint_uuid = os.environ["ENDPOINT_UUID"]
 download_function_uuid = os.environ["DOWNLOAD_FUNCTION_UUID"]
 custom_function_uuid = os.environ["CUSTOM_FUNCTION_UUID"]
 commit_function_uuid = os.environ["COMMIT_FUNCTION_UUID"]
@@ -45,23 +46,34 @@ def register(endpoint_uuid, custom_function_uuid):
 
 
 def run_function(act: Action, run_inputs: str | None = None):
-    with Executor(endpoint_id=endpoind_uuid, batch_size=1) as gce:
-        if act == "register":
-            future = gce.submit(register, endpoind_uuid, custom_function_uuid)
-        elif act == "download":
-            future = gce.submit_to_registered_function(
-                function_id=download_function_uuid, kwargs=eval(run_inputs)
-            )
-        elif act == "custom":
-            future = gce.submit_to_registered_function(
-                function_id=custom_function_uuid, kwargs=eval(run_inputs)[1]
-            )
-        else:
-            future = gce.submit_to_registered_function(
-                function_id=commit_function_uuid, kwargs=eval(run_inputs)
-            )
+    gcc = Client()
 
-        return future.result()
+    task_id = gcc.run(endpoint_id=endpoint_uuid, function_id="a34e0fc0-10e7-41ad-8380-37cc02304472")
+
+    while True:
+        try:
+            return gcc.get_result(task_id)
+        except Exception as e:
+            continue
+            #print("Exception: {}".format(e))
+    
+    # with Executor(endpoint_id=endpoind_uuid) as gce:
+    #     if act == "register":
+    #         future = gce.submit(register, endpoint_uuid, custom_function_uuid)
+    #     elif act == "download":
+    #         future = gce.submit_to_registered_function(
+    #             function_id=download_function_uuid, kwargs=eval(run_inputs)
+    #         )
+    #     elif act == "custom":
+    #         future = gce.submit_to_registered_function(
+    #             function_id=custom_function_uuid, kwargs=eval(run_inputs)[1]
+    #         )
+    #     else:
+    #         future = gce.submit_to_registered_function(
+    #             function_id=commit_function_uuid, kwargs=eval(run_inputs)
+    #         )
+
+    #     return future.result()
 
 
 if __name__ == "__main__":
@@ -69,5 +81,4 @@ if __name__ == "__main__":
     run_inputs = sys.argv[2] if len(sys.argv) > 2 else None
 
     results = run_function(act=act, run_inputs=run_inputs)
-
     print(f"result={results}")

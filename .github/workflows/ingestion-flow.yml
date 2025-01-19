@@ -15,10 +15,10 @@ jobs:
     env:
       GLOBUS_COMPUTE_CLIENT_ID: ${{ secrets.GLOBUS_COMPUTE_CLIENT_ID }}
       GLOBUS_COMPUTE_CLIENT_SECRET: ${{ secrets.GLOBUS_COMPUTE_CLIENT_SECRET }}
-      ENDPOINT_UUID: a48932e3-3a20-454b-9c1e-3aff354f3551 #e05fba2c-5959-42db-a56d-ca7ba7a24818
-      DOWNLOAD_FUNCTION_UUID: 5ca3af28-d262-4429-b010-c89ad2f528e2
-      CUSTOM_FUNCTION_UUID: a5f47c46-c6e7-4058-a520-c8ea091f0535 #b77f10f9-8d32-410e-8b2c-74b9ae00ad34 # a272fa1b-3dc4-471b-b69c-2ce7ae195bf2
-      COMMIT_FUNCTION_UUID: 7cd724b1-64fd-461d-b946-ee0e26dc9134
+      ENDPOINT_UUID: 9c0edc45-d6e3-461a-8664-5bbbe6f4af23 #a48932e3-3a20-454b-9c1e-3aff354f3551 #e05fba2c-5959-42db-a56d-ca7ba7a24818
+      DOWNLOAD_FUNCTION_UUID: a34e0fc0-10e7-41ad-8380-37cc02304472 #5ca3af28-d262-4429-b010-c89ad2f528e2
+      CUSTOM_FUNCTION_UUID: a34e0fc0-10e7-41ad-8380-37cc02304472 #a5f47c46-c6e7-4058-a520-c8ea091f0535 #b77f10f9-8d32-410e-8b2c-74b9ae00ad34 # a272fa1b-3dc4-471b-b69c-2ce7ae195bf2
+      COMMIT_FUNCTION_UUID: a34e0fc0-10e7-41ad-8380-37cc02304472 #7cd724b1-64fd-461d-b946-ee0e26dc9134
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -31,14 +31,26 @@ jobs:
     - name: Install Globus Compute
       run: pip install globus-compute-sdk
     - name: Register flow with AERO
-      run: python action_inputs/execute_function.py register >> $GITHUB_OUTPUT
+      run: |
+        echo "Step Started"
+        python action_inputs/execute_function.py register >> $GITHUB_OUTPUT
+        echo "Step Completed"
       id: register
     - name: Run download
-      run: python action_inputs/execute_function.py download "${{ steps.register.outputs.result }}" >> $GITHUB_OUTPUT
+      run: |
+        echo "Step Started"
+        python action_inputs/execute_function.py download "${{ steps.register.outputs.result }}" >> $GITHUB_OUTPUT
+        echo "Step Completed"
       id: download
     - name: Run custom-user-function
-      run: python action_inputs/execute_function.py custom "${{ steps.download.outputs.result }}"  >> $GITHUB_OUTPUT
+      run: |
+        echo "Step Started"
+        python action_inputs/execute_function.py custom "${{ steps.download.outputs.result }}"  >> $GITHUB_OUTPUT
+        echo "Step Completed"
       id: custom-uf
     - name: Run database-commit
-      run: python action_inputs/execute_function.py commit "${{ steps.custom-uf.outputs.result }}"
+      run: |
+        echo "Step Started"
+        python action_inputs/execute_function.py commit "${{ steps.custom-uf.outputs.result }}"
+        echo "Step Completed"
       id: db-commit
