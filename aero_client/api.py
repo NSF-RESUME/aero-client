@@ -1,11 +1,9 @@
 """DSaaS client API module"""
 
-import hashlib
 import json
 import logging
 import urllib.parse
 import requests
-import uuid
 import urllib
 
 from pathlib import Path
@@ -18,8 +16,6 @@ from globus_compute_sdk import Client
 from aero_client import AUTH_ACCESS_TOKEN
 from aero_client.config import CONF
 from aero_client.error import ClientError
-from aero_client.utils import get_collection_metadata
-from aero_client.utils import get_transfer_token
 from aero_client.utils import PolicyEnum
 
 logger = logging.getLogger(__name__)
@@ -121,86 +117,6 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
             "message": str(req.content, encoding="utf-8"),
         }
     return resp
-
-
-def save_output(
-    data: str | bytes,
-    name: str,
-    collection_url: str,
-    description: str,
-    sources: dict[int, int] = {},
-    function_uuid: str | None = None,
-    kwargs: JSON | None = None,
-) -> str:
-    """Save input data to GCS and record provenance information to DSaaS.
-
-    Args:
-        data (str | bytes): Currently either JSON or CSV string or bytes object will work. Eventually will accept any Python object.
-        name (str): Identifier to associate the data with. Will eventually help with search.
-        collection_url (str): The HTTPS URL of the GCS collection to store data to.
-        description (str): Text-based description of the provenance of the data
-        sources (dict[int | int]): A dictionary of DSaaS source ids and versions that contributed to the production of this data. Defaults to {}.
-        function_uuid (str, optional): The UUID of the function used to process the data. Defaults to ''.
-        kwargs: (JSON, optional): Input arguments to the function in JSON format. Defaults to None.
-
-    Throws:
-        ClientError: if DSaaS or GCS were not able to update properly, this error is raised
-
-    Returns:
-        The GCS UUID of the data should the client need to query it afterwards.
-    """
-
-    collection_domain = urllib.parse.urlparse(collection_url).netloc
-
-    collection_md = get_collection_metadata(collection_domain)
-
-    TRANSFER_TOKEN = get_transfer_token(collection_md["DATA"][0]["id"])
-    headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
-
-    filename = str(uuid.uuid4())
-    url = urllib.parse.urljoin(collection_url, filename)
-
-    # store in GCS
-    resp = requests.put(url, headers=headers, data=data)
-
-    if resp.status_code == 200:
-        ## store in DB
-        headers["Content-type"] = "application/json"
-
-        if isinstance(data, bytes):
-            checksum = hashlib.md5(data).hexdigest()
-        else:
-            checksum = hashlib.md5(data.encode("utf-8")).hexdigest()
-
-        params = {
-            "output_fn": filename,
-            "collection_uuid": collection_md["DATA"][0]["id"],
-            "url": collection_url,
-            "function_uuid": function_uuid,
-            "sources": sources,
-            "name": name,
-            "description": description,
-            "checksum": checksum,
-            "kwargs": kwargs,
-        }
-
-        headers = {
-            "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
-            "Content-type": "application/json",
-        }
-        req = requests.post(
-            f"{CONF.server_url}/prov/new",
-            data=json.dumps(params),
-            headers=headers,
-            verify=False,
-        )
-
-        if req.status_code == 200:
-            return filename
-        else:
-            raise ClientError(req.status_code, req.text)
-    else:
-        raise ClientError(resp.status_code, resp.text)
 
 
 def register_flow(

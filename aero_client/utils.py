@@ -104,7 +104,7 @@ def _client_auth() -> str:
         ]
         token_response = authenticate(client=client, scope=scopes)
 
-        CONF.dsaas_dir.mkdir(exist_ok=True)
+        CONF.dsaas_dir.mkdir(exist_ok=True, parents=True)
         with open(_TOKEN_PATH, "w+") as f:
             json.dump(token_response.by_resource_server, f)
 
