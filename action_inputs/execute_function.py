@@ -9,7 +9,7 @@ from typing import TypeAlias
 
 Action: TypeAlias = Literal["register", "download", "custom", "commit"]
 
-endpoind_uuid = os.environ["ENDPOINT_UUID"]
+endpoint_uuid = os.environ["ENDPOINT_UUID"]
 download_function_uuid = os.environ["DOWNLOAD_FUNCTION_UUID"]
 custom_function_uuid = os.environ["CUSTOM_FUNCTION_UUID"]
 commit_function_uuid = os.environ["COMMIT_FUNCTION_UUID"]
@@ -58,7 +58,7 @@ def run_function(act: Action, run_inputs: str | None = None):
     
     # with Executor(endpoint_id=endpoind_uuid) as gce:
     #     if act == "register":
-    #         future = gce.submit(register, endpoind_uuid, custom_function_uuid)
+    #         future = gce.submit(register, endpoint_uuid, custom_function_uuid)
     #     elif act == "download":
     #         future = gce.submit_to_registered_function(
     #             function_id=download_function_uuid, kwargs=eval(run_inputs)
