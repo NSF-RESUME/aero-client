@@ -47,14 +47,15 @@ def register(endpoint_uuid, custom_function_uuid):
 def run_function(act: Action, run_inputs: str | None = None):
     with Executor(endpoint_id=endpoind_uuid) as gce:
         if act == "register":
-            future = gce.submit(register, endpoind_uuid, custom_function_uuid)
+            future = gce.submit_to_registered_function(function_id="a34e0fc0-10e7-41ad-8380-37cc02304472")
+            #future = gce.submit(register, endpoind_uuid, custom_function_uuid)
         elif act == "download":
             future = gce.submit_to_registered_function(
                 function_id=download_function_uuid, kwargs=eval(run_inputs)
             )
         elif act == "custom":
             future = gce.submit_to_registered_function(
-                function_id=custom_function_uuid, kwargs=eval(run_inputs)[1]
+                function_id=custom_function_uuid, kwargs=eval(run_inputs)#[1]
             )
         else:
             future = gce.submit_to_registered_function(
