@@ -54,7 +54,8 @@ def run_function(act: Action, run_inputs: str | None = None):
         try:
             return gcc.get_result(task_id)
         except Exception as e:
-            print("Exception: {}".format(e))
+            continue
+            #print("Exception: {}".format(e))
     
     # with Executor(endpoint_id=endpoind_uuid) as gce:
     #     if act == "register":
