@@ -39,7 +39,7 @@ jobs:
       id: register
     - name: Run download
       run: |
-        echo "Step Started"
+        echo "Step Started ${{ steps.register.outputs.result }}"
         python action_inputs/execute_function.py download "${{ steps.register.outputs.result }}" >> $GITHUB_OUTPUT
         echo "Step Completed"
       id: download
