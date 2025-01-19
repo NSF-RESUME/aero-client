@@ -6,13 +6,11 @@ import logging
 
 
 # from aero_client.api import create_source
-from aero_client.api import get_file
 from aero_client.api import globus_logout
 from aero_client.api import list_metadata
 from aero_client.api import list_versions
 from aero_client.api import search_sources
 
-from aero_client.error import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +27,7 @@ def main():
     create_parser = subparsers.add_parser(
         "create", help="Create a source to store in DSaas"
     )
-    get_parser = subparsers.add_parser("get", help="Get source table from server")
+    # get_parser = subparsers.add_parser("get", help="Get source table from server")
     search_parser = subparsers.add_parser("search", help="Search sources")
     register_parser = subparsers.add_parser("register", help="Register analysis flow")
     _ = subparsers.add_parser("logout", help="Log out of Globus auth")
@@ -118,32 +116,32 @@ def main():
         help="email address to send notifications to in case of failure",
     )
 
-    # Get parser arguments
-    get_parser.add_argument(
-        "-t",
-        "--type",
-        required=True,
-        choices=["source", "output"],
-        help="The file type to fetch",
-    )
-    get_parser.add_argument(
-        "-i",
-        "--id",
-        required=True,
-        help="source/output id of the file to fetch",
-    )
-    get_parser.add_argument(
-        "-ver",
-        "--version",
-        help="version of the source to fetch",
-    )
-    get_parser.add_argument(
-        "-o",
-        "--output-path",
-        default=None,
-        type=str,
-        help="output path to save data to.",
-    )
+    # # Get parser arguments
+    # get_parser.add_argument(
+    #     "-t",
+    #     "--type",
+    #     required=True,
+    #     choices=["source", "output"],
+    #     help="The file type to fetch",
+    # )
+    # get_parser.add_argument(
+    #     "-i",
+    #     "--id",
+    #     required=True,
+    #     help="source/output id of the file to fetch",
+    # )
+    # get_parser.add_argument(
+    #     "-ver",
+    #     "--version",
+    #     help="version of the source to fetch",
+    # )
+    # get_parser.add_argument(
+    #     "-o",
+    #     "--output-path",
+    #     default=None,
+    #     type=str,
+    #     help="output path to save data to.",
+    # )
 
     search_parser.add_argument("query", type=str, help="query to pass to search engine")
 
@@ -209,18 +207,18 @@ def main():
                 except EOFError:
                     break
 
-    elif args.command == "get":
-        try:
-            file = get_file(
-                ftype=args.type,
-                id=args.id,
-                version=args.version,
-                output_path=args.output_path,
-            )
-            if not isinstance(file, bytes):
-                print(file.head(5))
-        except ClientError as e:
-            print(e)
+    # elif args.command == "get":
+    #     try:
+    #         file = get_file(
+    #             ftype=args.type,
+    #             id=args.id,
+    #             version=args.version,
+    #             output_path=args.output_path,
+    #         )
+    #         if not isinstance(file, bytes):
+    #             print(file.head(5))
+    #     except ClientError as e:
+    #         print(e)
 
     elif args.command == "search":
         res = search_sources(args.query)
