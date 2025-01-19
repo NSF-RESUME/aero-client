@@ -61,19 +61,19 @@ def run_function(act: Action, run_inputs: str | None = None):
         task_id = gcc.run(
             endpoint_id=endpoint_uuid,
             function_id=download_function_uuid,
-            kwargs=eval(run_inputs),
+            **eval(run_inputs),
         )
     elif act == "custom":
         task_id = gcc.run(
             endpoint_id=endpoint_uuid,
             function_id=custom_function_uuid,
-            kwargs=eval(run_inputs)[1],
+            **eval(run_inputs)[1],
         )
     else:
         task_id = gcc.run(
             endpoint_id=endpoint_uuid,
             function_id=commit_function_uuid,
-            kwargs=eval(run_inputs),
+            **eval(run_inputs),
         )
 
     while True:
@@ -81,7 +81,6 @@ def run_function(act: Action, run_inputs: str | None = None):
             return gcc.get_result(task_id)
         except Exception:
             continue
-            # print("Exception: {}".format(e))
 
     # with Executor(endpoint_id=endpoind_uuid) as gce:
     #     if act == "register":
