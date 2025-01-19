@@ -2,7 +2,6 @@ import os
 import sys
 
 from globus_compute_sdk import Client
-from globus_compute_sdk import Executor
 from typing import Literal
 from typing import TypeAlias
 
@@ -10,6 +9,7 @@ from typing import TypeAlias
 Action: TypeAlias = Literal["register", "download", "custom", "commit"]
 
 endpoint_uuid = os.environ["ENDPOINT_UUID"]
+register_function_uuid = os.environ["REGISTER_FUNCTION_UUID"]
 download_function_uuid = os.environ["DOWNLOAD_FUNCTION_UUID"]
 custom_function_uuid = os.environ["CUSTOM_FUNCTION_UUID"]
 commit_function_uuid = os.environ["COMMIT_FUNCTION_UUID"]
@@ -48,15 +48,41 @@ def register(endpoint_uuid, custom_function_uuid):
 def run_function(act: Action, run_inputs: str | None = None):
     gcc = Client()
 
-    task_id = gcc.run(endpoint_id=endpoint_uuid, function_id="a34e0fc0-10e7-41ad-8380-37cc02304472")
+    # task_id = gcc.run(endpoint_id=endpoint_uuid, function_id="a34e0fc0-10e7-41ad-8380-37cc02304472")
+    if act == "register":
+        task_id = gcc.run(
+            endpoint_uuid,
+            custom_function_uuid,
+            endpoint_id=endpoint_uuid,
+            function_id=register_function_uuid,
+        )
+
+    elif act == "download":
+        task_id = gcc.run(
+            endpoint_id=endpoint_uuid,
+            function_id=download_function_uuid,
+            kwargs=eval(run_inputs),
+        )
+    elif act == "custom":
+        task_id = gcc.run(
+            endpoint_id=endpoint_uuid,
+            function_id=custom_function_uuid,
+            kwargs=eval(run_inputs)[1],
+        )
+    else:
+        task_id = gcc.run(
+            endpoint_id=endpoint_uuid,
+            function_id=commit_function_uuid,
+            kwargs=eval(run_inputs),
+        )
 
     while True:
         try:
             return gcc.get_result(task_id)
-        except Exception as e:
+        except Exception:
             continue
-            #print("Exception: {}".format(e))
-    
+            # print("Exception: {}".format(e))
+
     # with Executor(endpoint_id=endpoind_uuid) as gce:
     #     if act == "register":
     #         future = gce.submit(register, endpoint_uuid, custom_function_uuid)
