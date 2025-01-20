@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 from globus_compute_sdk import Client
 from typing import Literal
@@ -80,6 +81,7 @@ def run_function(act: Action, run_inputs: str | None = None):
         try:
             return gcc.get_result(task_id)
         except Exception:
+            time.sleep(0.1)
             continue
 
     # with Executor(endpoint_id=endpoind_uuid) as gce:
