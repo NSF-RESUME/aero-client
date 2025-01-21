@@ -85,7 +85,7 @@ def run_function(act: Action, run_inputs: str | None = None):
             return result
         except Exception as e:
             debug.append(str(e))
-            time.sleep(10)
+            time.sleep(1)
             continue
 
     # with Executor(endpoint_id=endpoind_uuid) as gce:
