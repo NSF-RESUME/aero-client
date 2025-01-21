@@ -84,6 +84,8 @@ def run_function(act: Action, run_inputs: str | None = None):
         try:
             start = time.time()
             result = gcc.get_result(task_id)
+            end = time.time()
+            debug.append(end - start)
             result["debug"] = debug
             return result
         except Exception:
