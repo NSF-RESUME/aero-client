@@ -78,14 +78,18 @@ def run_function(act: Action, run_inputs: str | None = None):
         )
 
     debug = []
+    start = 0
+    end = 0
     while True:
         try:
+            start = time.time()
             result = gcc.get_result(task_id)
             result["debug"] = debug
             return result
-        except Exception as e:
-            debug.append(str(e))
+        except Exception:
+            end = time.time()
             time.sleep(1)
+            debug.append(end - start)
             continue
 
     # with Executor(endpoint_id=endpoind_uuid) as gce:
