@@ -82,6 +82,7 @@ def run_function(act: Action, run_inputs: str | None = None):
         try:
             result = gcc.get_result(task_id)
             result["debug"] = debug
+            return result
         except Exception as e:
             debug.append(str(e))
             time.sleep(10)
