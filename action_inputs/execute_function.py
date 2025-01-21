@@ -47,9 +47,11 @@ def register(endpoint_uuid, custom_function_uuid):
 
 
 def run_function(act: Action, run_inputs: str | None = None):
+    debug = {"gcc.run": [], "gcc.get_result": []}
     gcc = Client()
 
     # task_id = gcc.run(endpoint_id=endpoint_uuid, function_id="a34e0fc0-10e7-41ad-8380-37cc02304472")
+    start = time.time()
     if act == "register":
         task_id = gcc.run(
             endpoint_uuid,
@@ -76,22 +78,22 @@ def run_function(act: Action, run_inputs: str | None = None):
             function_id=commit_function_uuid,
             **eval(run_inputs),
         )
+    end = time.time()
 
-    debug = []
-    start = 0
-    end = 0
+    debug["gcc.run"].append(end - start)
+
     while True:
         try:
             start = time.time()
             result = gcc.get_result(task_id)
             end = time.time()
-            debug.append(end - start)
+            debug["gcc.get_result"].append(end - start)
             result["debug"] = debug
             return result
         except Exception:
             end = time.time()
             time.sleep(1)
-            debug.append(end - start)
+            debug["gcc.get_result"].append(end - start)
             continue
 
     # with Executor(endpoint_id=endpoind_uuid) as gce:
