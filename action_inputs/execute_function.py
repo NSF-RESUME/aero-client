@@ -77,10 +77,13 @@ def run_function(act: Action, run_inputs: str | None = None):
             **eval(run_inputs),
         )
 
+    debug = []
     while True:
         try:
-            return gcc.get_result(task_id)
-        except Exception:
+            result = gcc.get_result(task_id)
+            result["debug"] = debug
+        except Exception as e:
+            debug.append(str(e))
             time.sleep(10)
             continue
 
