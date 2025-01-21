@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 import time
@@ -120,4 +121,5 @@ if __name__ == "__main__":
     run_inputs = sys.argv[2] if len(sys.argv) > 2 else None
 
     results = run_function(act=act, run_inputs=run_inputs)
+    results["function_end"] = datetime.datetime.now()
     print(f"result={results}")
