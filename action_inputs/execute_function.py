@@ -91,11 +91,14 @@ def run_function(act: Action, run_inputs: str | None = None):
             debug["gcc.get_result"].append(end - start)
             result["debug"] = debug
             return result
-        except Exception:
+        except Exception as e:
             end = time.time()
             time.sleep(1)
             debug["gcc.get_result"].append(end - start)
-            continue
+            if "pending" not in str(e):
+                return {"error": str(e)}
+            else:
+                continue
 
     # with Executor(endpoint_id=endpoind_uuid) as gce:
     #     if act == "register":
