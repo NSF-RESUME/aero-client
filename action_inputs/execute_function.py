@@ -97,7 +97,7 @@ def run_function(act: Action, run_inputs: str | None = None):
             time.sleep(1)
             debug["gcc.get_result"].append(end - start)
             if "pending" not in str(e):
-                # result["error"] = e
+                result["error"] = str(e)
                 return result
             else:
                 continue
