@@ -82,6 +82,7 @@ def run_function(act: Action, run_inputs: str | None = None):
     end = time.time()
 
     debug["gcc.run"].append(end - start)
+    result = {}
 
     while True:
         try:
@@ -96,8 +97,9 @@ def run_function(act: Action, run_inputs: str | None = None):
             time.sleep(1)
             debug["gcc.get_result"].append(end - start)
             if "pending" not in str(e):
-                print(f"error {str(e)}")
-                return {}
+                result["error"] = e
+                return result
+
             else:
                 continue
 
