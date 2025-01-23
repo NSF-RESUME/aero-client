@@ -87,7 +87,11 @@ def run_function(act: Action, run_inputs: str | None = None):
     while True:
         try:
             start = time.time()
-            result = gcc.get_result(task_id[1])
+            result = gcc.get_result(task_id)
+
+            if act == "download":
+                result = result[1]
+
             end = time.time()
             debug["gcc.get_result"].append(end - start)
             result["debug"] = debug
@@ -97,7 +101,6 @@ def run_function(act: Action, run_inputs: str | None = None):
             time.sleep(1)
             debug["gcc.get_result"].append(end - start)
             if "pending" not in str(e):
-                # result["error"] = str(e)
                 raise e
             else:
                 continue
