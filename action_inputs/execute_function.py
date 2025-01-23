@@ -71,7 +71,7 @@ def run_function(act: Action, run_inputs: str | None = None):
         task_id = gcc.run(
             endpoint_id=endpoint_uuid,
             function_id=custom_function_uuid,
-            **eval(run_inputs),  # [1],
+            **eval(run_inputs)[1],
         )
     else:
         task_id = gcc.run(
@@ -96,7 +96,8 @@ def run_function(act: Action, run_inputs: str | None = None):
             time.sleep(1)
             debug["gcc.get_result"].append(end - start)
             if "pending" not in str(e):
-                return {"error": str(e)}
+                print(f"error {str(e)}")
+                return
             else:
                 continue
 
