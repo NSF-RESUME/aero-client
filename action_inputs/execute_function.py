@@ -97,29 +97,10 @@ def run_function(act: Action, run_inputs: str | None = None):
             time.sleep(1)
             debug["gcc.get_result"].append(end - start)
             if "pending" not in str(e):
-                # result["error"] = e
+                result["error"] = e
                 return result
-
             else:
                 continue
-
-    # with Executor(endpoint_id=endpoind_uuid) as gce:
-    #     if act == "register":
-    #         future = gce.submit(register, endpoint_uuid, custom_function_uuid)
-    #     elif act == "download":
-    #         future = gce.submit_to_registered_function(
-    #             function_id=download_function_uuid, kwargs=eval(run_inputs)
-    #         )
-    #     elif act == "custom":
-    #         future = gce.submit_to_registered_function(
-    #             function_id=custom_function_uuid, kwargs=eval(run_inputs)[1]
-    #         )
-    #     else:
-    #         future = gce.submit_to_registered_function(
-    #             function_id=commit_function_uuid, kwargs=eval(run_inputs)
-    #         )
-
-    #     return future.result()
 
 
 if __name__ == "__main__":
