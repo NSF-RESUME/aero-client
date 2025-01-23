@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 import time
@@ -70,7 +71,7 @@ def run_function(act: Action, run_inputs: str | None = None):
         task_id = gcc.run(
             endpoint_id=endpoint_uuid,
             function_id=custom_function_uuid,
-            **eval(run_inputs)[1],
+            **eval(run_inputs),
         )
     else:
         task_id = gcc.run(
@@ -86,7 +87,7 @@ def run_function(act: Action, run_inputs: str | None = None):
     while True:
         try:
             start = time.time()
-            result = gcc.get_result(task_id)
+            result = gcc.get_result(task_id[1])
             end = time.time()
             debug["gcc.get_result"].append(end - start)
             result["debug"] = debug
@@ -126,5 +127,5 @@ if __name__ == "__main__":
     run_inputs = sys.argv[2] if len(sys.argv) > 2 else None
 
     results = run_function(act=act, run_inputs=run_inputs)
-    # results["function_end"] = datetime.datetime.now()
+    results["function_end"] = datetime.datetime.now()
     print(f"result={results}")
