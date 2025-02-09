@@ -20,7 +20,6 @@ class ClientConf:
     ...
     """
 
-    endpoint_uuid: str = "6dec76ea-e7fd-492e-947e-f2a92073a275"
     portal_client_id: str = os.getenv(
         "PORTAL_CLIENT_ID"
     )  # v"082d6a19-da16-4552-9944-e081cdaff7bc"
@@ -32,7 +31,7 @@ class ClientConf:
 
     def __post_init__(self):
         if (test := os.getenv("DSAAS_TESTENV")) is not None and int(test) == 1:
-            self.server_address = "localhost:5001"
+            self.server_address = "https://localhost:5001"
         elif server_address := os.getenv("AERO_SERVER"):
             self.server_address = f"http://{server_address}"
         else:
