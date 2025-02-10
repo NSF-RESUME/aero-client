@@ -1,15 +1,13 @@
 """Osprey Command-line interface."""
 
 import argparse
+import dataclasses
 import json
 import logging
 
+from pprint import pprint
 
-# from aero_client.api import create_source
-from aero_client.api import globus_logout
-from aero_client.api import list_metadata
-from aero_client.api import list_versions
-from aero_client.api import search_sources
+from aero_client.config import load_conf
 
 
 logger = logging.getLogger(__name__)
@@ -23,13 +21,14 @@ def main():
         description="DSaaS client for querying stored data",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available actions")
-    list_parser = subparsers.add_parser("list", help="List monitored data")
+    list_parser = subparsers.add_parser("list", help="List aero metadata")
     create_parser = subparsers.add_parser(
         "create", help="Create a source to store in DSaas"
     )
     # get_parser = subparsers.add_parser("get", help="Get source table from server")
     search_parser = subparsers.add_parser("search", help="Search sources")
     register_parser = subparsers.add_parser("register", help="Register analysis flow")
+    config_parser = subparsers.add_parser("configure", help="Configure the client")
     _ = subparsers.add_parser("logout", help="Log out of Globus auth")
 
     parser.add_argument("-l", "--log", type=str, default="INFO", help="Set log level")
@@ -116,42 +115,8 @@ def main():
         help="email address to send notifications to in case of failure",
     )
 
-    # # Get parser arguments
-    # get_parser.add_argument(
-    #     "-t",
-    #     "--type",
-    #     required=True,
-    #     choices=["source", "output"],
-    #     help="The file type to fetch",
-    # )
-    # get_parser.add_argument(
-    #     "-i",
-    #     "--id",
-    #     required=True,
-    #     help="source/output id of the file to fetch",
-    # )
-    # get_parser.add_argument(
-    #     "-ver",
-    #     "--version",
-    #     help="version of the source to fetch",
-    # )
-    # get_parser.add_argument(
-    #     "-o",
-    #     "--output-path",
-    #     default=None,
-    #     type=str,
-    #     help="output path to save data to.",
-    # )
-
     search_parser.add_argument("query", type=str, help="query to pass to search engine")
 
-    # register arguments
-    #     endpoint_uuid: str,
-    # function_uuid: str,
-    # sources: dict[int | int] | list[int] | None = None,
-    # kwargs: JSON | None = None,
-    # config: str | None = None,
-    # description: str | None = None,
     register_parser.add_argument(
         "-e", "--endpoint-uuid", type=str, help="Globus Compute endpoint uuid"
     )
@@ -186,6 +151,10 @@ def main():
         "-d", "--description", type=str, default=None, help="Description of task"
     )
 
+    config_parser.add_argument(
+        "-f", "--file", type=str, default=None, help="Configuration file"
+    )
+
     args = parser.parse_args()
 
     log_level = getattr(logging, args.log.upper(), None)
@@ -194,12 +163,16 @@ def main():
     # actions
     if args.command == "list":
         if args.id is not None:
+            from aero_client.api import list_versions
+
             versions = list(list_versions(args.id))
             if len(versions) == 0:
                 print("No versions available.")
             else:
                 print(json.dumps(versions, indent=4))
         else:
+            from aero_client.api import list_metadata
+
             for page in list_metadata(args.type):
                 print(json.dumps(page, indent=4))
                 try:
@@ -221,6 +194,8 @@ def main():
     #         print(e)
 
     elif args.command == "search":
+        from aero_client.api import search_sources
+
         res = search_sources(args.query)
 
         if len(res) == 0:
@@ -231,7 +206,12 @@ def main():
     elif args.command == "register":
         pass
 
+    elif args.command == "configure":
+        pprint(dataclasses.asdict(load_conf(args.file, update=True)))
+
     elif args.command == "logout":
+        from aero_client.api import globus_logout
+
         # TODO: fix bug where user needs to be authenticated before logging out
         globus_logout()
 

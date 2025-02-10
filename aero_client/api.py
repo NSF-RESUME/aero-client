@@ -13,13 +13,14 @@ from typing import Callable, TypeAlias
 
 from globus_compute_sdk import Client
 
-from aero_client import AUTH_ACCESS_TOKEN
-from aero_client.config import CONF
 from aero_client.error import ClientError
+from aero_client.utils import _client_auth
+from aero_client.utils import CONF
 from aero_client.utils import PolicyEnum
 
 logger = logging.getLogger(__name__)
 
+AUTH_ACCESS_TOKEN = _client_auth()
 JSON: TypeAlias = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
 # tmp fix
@@ -68,6 +69,7 @@ def list_metadata(
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
 
     url = urllib.parse.urljoin(CONF.server_url, metadata_type)
+    print(url)
     req = session.get(
         url=url,
         headers=headers,

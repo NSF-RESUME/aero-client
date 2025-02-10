@@ -22,12 +22,22 @@ from globus_sdk import RefreshTokenAuthorizer
 from globus_sdk import TransferClient
 
 
-from aero_client.config import CONF
+from aero_client.config import _conf_symlink_path
+from aero_client.config import _conf_fn
+from aero_client.config import load_conf
 from aero_client.error import ClientError
 
 
+logger = logging.getLogger(__name__)
+
+try:
+    CONF = load_conf(_conf_symlink_path / _conf_fn)
+except Exception as e:
+    logger.error(f"{e}")
+    raise e
+
 _REDIRECT_URI = "https://auth.globus.org/v2/web/auth-code"
-_TOKEN_PATH = Path(CONF.dsaas_dir, CONF.token_file)
+_TOKEN_PATH = Path(CONF.aero_dir, CONF.token_file)
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +114,7 @@ def _client_auth() -> str:
         ]
         token_response = authenticate(client=client, scope=scopes)
 
-        CONF.dsaas_dir.mkdir(exist_ok=True, parents=True)
+        CONF.aero_dir.mkdir(exist_ok=True, parents=True)
         with open(_TOKEN_PATH, "w+") as f:
             json.dump(token_response.by_resource_server, f)
 
