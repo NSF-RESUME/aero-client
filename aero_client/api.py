@@ -14,6 +14,10 @@ from typing import Callable, TypeAlias
 from globus_compute_sdk import Client
 
 from aero_client.error import ClientError
+from aero_client.jobs import commit_analysis
+from aero_client.jobs import download
+from aero_client.jobs import database_commit
+from aero_client.jobs import get_versions
 from aero_client.utils import _client_auth
 from aero_client.utils import CONF
 from aero_client.utils import PolicyEnum
@@ -131,6 +135,8 @@ def register_flow(
     description: str | None = None,
     policy: PolicyEnum = PolicyEnum.NONE,
     timer_delay: int | None = None,
+    pull_function_uuid: str | None = None,
+    commit_function_uuid: str | None = None,
 ) -> None:
     """Register user function to run as a Globus Flow on remote server periodically.
 
@@ -147,6 +153,12 @@ def register_flow(
         description (str | None, optional): A description of the Flow. Default is None.
         policy (PolicyEnum, optional): Which policy to use to rerun the flow. Default is never rerun.
         timer_delay (int | None, optional): The timer delay in seconds if PolicyEnum.TIMER is applied. Default is None.
+        pull_function_uuid (str | none, optional): the uuid returned when registering either `aero_client.jobs.download`
+            or `aero_client.jobs.get_versions` with Globus Compute. The function will register with GC if not provided,
+            but issues may arise if local python version does not match endpoint python version. default is none.
+        commit_function_uuid (str | none, optional): the uuid returned when registering either `aero_client.jobs.database_commit`
+            or `aero_client.jobs.commit_analysis` with Globus Compute. The function will register with GC if not provided,
+            but issues may arise if local python version does not match endpoint python version. default is none.
 
     Raises:
         ClientError: if function was not able to be registered as a flow, this error is raised
@@ -169,12 +181,26 @@ def register_flow(
         if v["collection_url"][-1] != "/":
             v["collection_url"] += "/"
 
+    if policy is not None:
+        if policy == PolicyEnum.INGESTION:
+            if pull_function_uuid is None:
+                pull_function_uuid = register_function(download)
+            if commit_function_uuid is None:
+                commit_function_uuid = register_function(database_commit)
+        elif policy != PolicyEnum.NONE:
+            if pull_function_uuid is None:
+                pull_function_uuid = register_function(get_versions)
+            if commit_function_uuid is None:
+                commit_function_uuid = register_function(commit_analysis)
+
     data = {}
     data["input_data"] = input_data
     data["output_data"] = output_data
     data["description"] = description
     data["gc_endpoint"] = endpoint_uuid
     data["function_uuid"] = function_uuid
+    data["pull_function_uuid"] = pull_function_uuid
+    data["commit_function_uuid"] = commit_function_uuid
     data["flow_kwargs"] = kwargs
     data["rule"] = policy
     data["timer_delay"] = timer_delay
