@@ -62,7 +62,7 @@ def load_conf(conf_file: str, update: bool = False) -> None:
     else:
         conf_kwargs["server_address"] = "https://aero.emews.org:5001"
 
-    conf_kwargs["server_url"] = f"{conf_kwargs['server_address']}/osprey/api/v1.0/"
+    conf_kwargs["server_url"] = f"{conf_kwargs['server_address']}"  # /osprey/api/v1.0/"
     conf_kwargs["aero_dir"] = Path(config["aero"]["cache_dir"]).expanduser().absolute()
 
     Path.mkdir(conf_kwargs["aero_dir"], parents=True, exist_ok=True)

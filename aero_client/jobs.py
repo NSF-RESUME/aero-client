@@ -119,7 +119,7 @@ def database_commit(*args, **kwargs) -> dict[str, int | float | str | dict]:
         f"{CONF.server_url}/prov/new",
         headers=aero_headers,
         verify=False,
-        data=json.dumps(kwargs),
+        data=json.dumps(kwargs["aero"]),
     )
 
     assert response.status_code == 200, response.json()
