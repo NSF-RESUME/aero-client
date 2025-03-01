@@ -8,9 +8,9 @@
 <link href="../" rel="prev"/>
 <link href="../cli/" rel="next"/>
 <link href="../../assets/images/favicon.png" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.6.1" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.6.6" name="generator"/>
 <title>api - Aero-Client</title>
-<link href="../../assets/stylesheets/main.a40c8224.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/main.8608ea7d.min.css" rel="stylesheet"/>
 <link href="../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
@@ -333,6 +333,14 @@
 </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="../jobs/">
+<span class="md-ellipsis">
+    jobs
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="../utils/">
 <span class="md-ellipsis">
     utils
@@ -453,7 +461,7 @@
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -470,7 +478,7 @@ Defaults to True.</p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>bool</code>
+<code><span title="bool">bool</span></code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -500,7 +508,7 @@ Defaults to True.</p>
 <p>
 <span class="doc-returns-annotation">
 <b>TYPE:</b>
-<code>dict</code>
+<code><span title="dict">dict</span></code>
 </span>
 </p>
 </td>
@@ -593,7 +601,9 @@ Defaults to True.</p>
 </span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-9"><a href="#__codelineno-0-9" id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="n">policy</span><span class="p">:</span> <span class="n">PolicyEnum</span> <span class="o">=</span> <span class="n">PolicyEnum</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span>
 </span><span id="__span-0-10"><a href="#__codelineno-0-10" id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="n">timer_delay</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-11"><a href="#__codelineno-0-11" id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span><span id="__span-0-11"><a href="#__codelineno-0-11" id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="n">pull_function_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-12"><a href="#__codelineno-0-12" id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="n">commit_function_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-13"><a href="#__codelineno-0-13" id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 <div class="doc doc-contents">
 <p>Register user function to run as a Globus Flow on remote server periodically.</p>
@@ -616,7 +626,7 @@ Defaults to True.</p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -632,7 +642,7 @@ Defaults to True.</p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -650,7 +660,7 @@ Default is None.</version></aero_id></p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>(dict[str | dict[str, uuid | int]], optional)</code>
+<code>(<span title="dict">dict</span>[<span title="str">str</span> | <span title="dict">dict</span>[<span title="str">str</span>, <span title="uuid">uuid</span> | <span title="int">int</span>]], <span title="optional">optional</span>)</code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -671,7 +681,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>dict[str | dict[str, str]]</code>
+<code><span title="dict">dict</span>[<span title="str">str</span> | <span title="dict">dict</span>[<span title="str">str</span>, <span title="str">str</span>]]</code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -711,7 +721,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -731,7 +741,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str | None</code>
+<code><span title="str">str</span> | None</code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -751,11 +761,11 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code><a class="autorefs autorefs-internal" title="aero_client.utils.PolicyEnum" href="../#aero_client.utils.PolicyEnum">PolicyEnum</a></code>
+<code><a class="autorefs autorefs-internal" href="../#aero_client.utils.PolicyEnum" title="aero_client.utils.PolicyEnum">PolicyEnum</a></code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
-<code><a class="autorefs autorefs-internal" title="aero_client.utils.PolicyEnum.NONE" href="../#aero_client.utils.PolicyEnum.NONE">NONE</a></code>
+<code><a class="autorefs autorefs-internal" href="../#aero_client.utils.PolicyEnum.NONE" title="aero_client.utils.PolicyEnum.NONE">NONE</a></code>
 </span>
 </p>
 </td>
@@ -771,7 +781,51 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>int | None</code>
+<code><span title="int">int</span> | None</code>
+</span>
+<span class="doc-param-default">
+<b>DEFAULT:</b>
+<code>None</code>
+</span>
+</p>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>pull_function_uuid</code>
+</td>
+<td class="doc-param-details">
+<div class="doc-md-description">
+<p>the uuid returned when registering either <code>aero_client.jobs.download</code>
+or <code>aero_client.jobs.get_versions</code> with Globus Compute. The function will register with GC if not provided,
+but issues may arise if local python version does not match endpoint python version. default is none.</p>
+</div>
+<p>
+<span class="doc-param-annotation">
+<b>TYPE:</b>
+<code><span title="str">str</span> | <span title="none">none</span></code>
+</span>
+<span class="doc-param-default">
+<b>DEFAULT:</b>
+<code>None</code>
+</span>
+</p>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>commit_function_uuid</code>
+</td>
+<td class="doc-param-details">
+<div class="doc-md-description">
+<p>the uuid returned when registering either <code>aero_client.jobs.database_commit</code>
+or <code>aero_client.jobs.commit_analysis</code> with Globus Compute. The function will register with GC if not provided,
+but issues may arise if local python version does not match endpoint python version. default is none.</p>
+</div>
+<p>
+<span class="doc-param-annotation">
+<b>TYPE:</b>
+<code><span title="str">str</span> | <span title="none">none</span></code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -793,7 +847,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <tr class="doc-section-item">
 <td>
 <span class="doc-raises-annotation">
-<code><a class="autorefs autorefs-internal" title="aero_client.error.ClientError" href="../#aero_client.error.ClientError">ClientError</a></code>
+<code><a class="autorefs autorefs-internal" href="../#aero_client.error.ClientError" title="aero_client.error.ClientError">ClientError</a></code>
 </span>
 </td>
 <td class="doc-raises-details">
@@ -869,7 +923,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -887,7 +941,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <tr class="doc-section-item">
 <td>
 <span class="doc-returns-annotation">
-<code>list[dict[str, str | int]]</code>
+<code><span title="list">list</span>[<span title="dict">dict</span>[<span title="str">str</span>, <span title="str">str</span> | <span title="int">int</span>]]</code>
 </span>
 </td>
 <td class="doc-returns-details">
@@ -962,7 +1016,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <div class="md-dialog__inner md-typeset"></div>
 </div>
 <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "navigation.footer", "navigation.path", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
-<script src="../../assets/javascripts/bundle.5090c770.min.js"></script>
+<script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
 <script src="https://unpkg.com/browse/mermaid@11.0.2/dist/mermaid.min.js"></script>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script src="../../javascripts/mathjax.js"></script>

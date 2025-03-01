@@ -8,9 +8,9 @@
 <link href="../registering_flows/" rel="prev"/>
 <link href="api/" rel="next"/>
 <link href="../assets/images/favicon.png" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.6.1" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.6.6" name="generator"/>
 <title>aero_client - Aero-Client</title>
-<link href="../assets/stylesheets/main.a40c8224.min.css" rel="stylesheet"/>
+<link href="../assets/stylesheets/main.8608ea7d.min.css" rel="stylesheet"/>
 <link href="../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
@@ -373,6 +373,45 @@
 </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs">
+<span class="md-ellipsis">
+      jobs
+    </span>
+</a>
+<nav aria-label="jobs" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs.commit_analysis">
+<span class="md-ellipsis">
+      commit_analysis()
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs.database_commit">
+<span class="md-ellipsis">
+      database_commit()
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs.download">
+<span class="md-ellipsis">
+      download()
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs.get_versions">
+<span class="md-ellipsis">
+      get_versions()
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#aero_client.utils">
 <span class="md-ellipsis">
       utils
@@ -425,6 +464,13 @@
 </li>
 </ul>
 </nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.utils._client_auth">
+<span class="md-ellipsis">
+      _client_auth()
+    </span>
+</a>
 </li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="#aero_client.utils.aero_format">
@@ -503,6 +549,14 @@
 <a class="md-nav__link" href="example/">
 <span class="md-ellipsis">
     example
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="jobs/">
+<span class="md-ellipsis">
+    jobs
     
   </span>
 </a>
@@ -665,6 +719,45 @@
 </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs">
+<span class="md-ellipsis">
+      jobs
+    </span>
+</a>
+<nav aria-label="jobs" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs.commit_analysis">
+<span class="md-ellipsis">
+      commit_analysis()
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs.database_commit">
+<span class="md-ellipsis">
+      database_commit()
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs.download">
+<span class="md-ellipsis">
+      download()
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.jobs.get_versions">
+<span class="md-ellipsis">
+      get_versions()
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#aero_client.utils">
 <span class="md-ellipsis">
       utils
@@ -717,6 +810,13 @@
 </li>
 </ul>
 </nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#aero_client.utils._client_auth">
+<span class="md-ellipsis">
+      _client_auth()
+    </span>
+</a>
 </li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="#aero_client.utils.aero_format">
@@ -774,7 +874,6 @@
 </a>
 </div>
 <div class="doc doc-contents first">
-<p>The AERO client module.</p>
 <div class="doc doc-children">
 <div class="doc doc-object doc-module">
 <h2 class="doc doc-heading" id="aero_client.api">
@@ -817,7 +916,7 @@
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -834,7 +933,7 @@ Defaults to True.</p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>bool</code>
+<code><span title="bool">bool</span></code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -864,7 +963,7 @@ Defaults to True.</p>
 <p>
 <span class="doc-returns-annotation">
 <b>TYPE:</b>
-<code>dict</code>
+<code><span title="dict">dict</span></code>
 </span>
 </p>
 </td>
@@ -957,7 +1056,9 @@ Defaults to True.</p>
 </span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-9"><a href="#__codelineno-0-9" id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="n">policy</span><span class="p">:</span> <span class="n">PolicyEnum</span> <span class="o">=</span> <span class="n">PolicyEnum</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span>
 </span><span id="__span-0-10"><a href="#__codelineno-0-10" id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="n">timer_delay</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-11"><a href="#__codelineno-0-11" id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span><span id="__span-0-11"><a href="#__codelineno-0-11" id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="n">pull_function_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-12"><a href="#__codelineno-0-12" id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="n">commit_function_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-13"><a href="#__codelineno-0-13" id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 <div class="doc doc-contents">
 <p>Register user function to run as a Globus Flow on remote server periodically.</p>
@@ -980,7 +1081,7 @@ Defaults to True.</p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -996,7 +1097,7 @@ Defaults to True.</p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -1014,7 +1115,7 @@ Default is None.</version></aero_id></p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>(dict[str | dict[str, uuid | int]], optional)</code>
+<code>(<span title="dict">dict</span>[<span title="str">str</span> | <span title="dict">dict</span>[<span title="str">str</span>, <span title="uuid">uuid</span> | <span title="int">int</span>]], <span title="optional">optional</span>)</code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -1035,7 +1136,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>dict[str | dict[str, str]]</code>
+<code><span title="dict">dict</span>[<span title="str">str</span> | <span title="dict">dict</span>[<span title="str">str</span>, <span title="str">str</span>]]</code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -1075,7 +1176,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -1095,7 +1196,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str | None</code>
+<code><span title="str">str</span> | None</code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -1115,11 +1216,11 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code><a class="autorefs autorefs-internal" title="aero_client.utils.PolicyEnum" href="#aero_client.utils.PolicyEnum">PolicyEnum</a></code>
+<code><a class="autorefs autorefs-internal" href="#aero_client.utils.PolicyEnum" title="aero_client.utils.PolicyEnum">PolicyEnum</a></code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
-<code><a class="autorefs autorefs-internal" title="aero_client.utils.PolicyEnum.NONE" href="#aero_client.utils.PolicyEnum.NONE">NONE</a></code>
+<code><a class="autorefs autorefs-internal" href="#aero_client.utils.PolicyEnum.NONE" title="aero_client.utils.PolicyEnum.NONE">NONE</a></code>
 </span>
 </p>
 </td>
@@ -1135,7 +1236,51 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>int | None</code>
+<code><span title="int">int</span> | None</code>
+</span>
+<span class="doc-param-default">
+<b>DEFAULT:</b>
+<code>None</code>
+</span>
+</p>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>pull_function_uuid</code>
+</td>
+<td class="doc-param-details">
+<div class="doc-md-description">
+<p>the uuid returned when registering either <code>aero_client.jobs.download</code>
+or <code>aero_client.jobs.get_versions</code> with Globus Compute. The function will register with GC if not provided,
+but issues may arise if local python version does not match endpoint python version. default is none.</p>
+</div>
+<p>
+<span class="doc-param-annotation">
+<b>TYPE:</b>
+<code><span title="str">str</span> | <span title="none">none</span></code>
+</span>
+<span class="doc-param-default">
+<b>DEFAULT:</b>
+<code>None</code>
+</span>
+</p>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>commit_function_uuid</code>
+</td>
+<td class="doc-param-details">
+<div class="doc-md-description">
+<p>the uuid returned when registering either <code>aero_client.jobs.database_commit</code>
+or <code>aero_client.jobs.commit_analysis</code> with Globus Compute. The function will register with GC if not provided,
+but issues may arise if local python version does not match endpoint python version. default is none.</p>
+</div>
+<p>
+<span class="doc-param-annotation">
+<b>TYPE:</b>
+<code><span title="str">str</span> | <span title="none">none</span></code>
 </span>
 <span class="doc-param-default">
 <b>DEFAULT:</b>
@@ -1157,7 +1302,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <tr class="doc-section-item">
 <td>
 <span class="doc-raises-annotation">
-<code><a class="autorefs autorefs-internal" title="aero_client.error.ClientError" href="#aero_client.error.ClientError">ClientError</a></code>
+<code><a class="autorefs autorefs-internal" href="#aero_client.error.ClientError" title="aero_client.error.ClientError">ClientError</a></code>
 </span>
 </td>
 <td class="doc-raises-details">
@@ -1233,7 +1378,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -1251,7 +1396,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <tr class="doc-section-item">
 <td>
 <span class="doc-returns-annotation">
-<code>list[dict[str, str | int]]</code>
+<code><span title="list">list</span>[<span title="dict">dict</span>[<span title="str">str</span>, <span title="str">str</span> | <span title="int">int</span>]]</code>
 </span>
 </td>
 <td class="doc-returns-details">
@@ -1311,21 +1456,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <div class="doc doc-object doc-class">
 <h3 class="doc doc-heading" id="aero_client.config.ClientConf">
 <span class="doc doc-object-name doc-class-name">ClientConf</span>
-<span class="doc doc-labels">
-<small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-</span>
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nf">ClientConf</span><span class="p">(</span>
-</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="n">client_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"c78511ef-8cf7-4802-a7e1-7d56e27b1bf8"</span><span class="p">,</span>
-</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>    <span class="n">endpoint_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"6dec76ea-e7fd-492e-947e-f2a92073a275"</span><span class="p">,</span>
-</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>    <span class="n">portal_client_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"PORTAL_CLIENT_ID"</span><span class="p">),</span>
-</span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a>    <span class="n">https_server</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"https://g-c952d0.1305de.36fe.data.globus.org"</span><span class="p">,</span>
-</span><span id="__span-0-6"><a href="#__codelineno-0-6" id="__codelineno-0-6" name="__codelineno-0-6"></a>    <span class="n">dsaas_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
-</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a>        <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">(),</span> <span class="s2">".local/share/dsaas"</span>
-</span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="p">),</span>
-</span><span id="__span-0-9"><a href="#__codelineno-0-9" id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="n">token_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"client_tokens.json"</span><span class="p">,</span>
-</span><span id="__span-0-10"><a href="#__codelineno-0-10" id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="p">)</span>
-</span></code></pre></div>
 <div class="doc doc-contents">
 <p>Configuration for the AERO client.</p>
 <div class="doc doc-children">
@@ -1371,7 +1502,7 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 </span></code></pre></div>
 <div class="doc doc-contents">
 <p class="doc doc-class-bases">
-              Bases: <code>Exception</code></p>
+              Bases: <code><span title="Exception">Exception</span></code></p>
 <p>Error for the AERO client.</p>
 <div class="doc doc-children">
 </div>
@@ -1394,6 +1525,166 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 <div class="doc doc-contents">
 <p>Example of the AERO client in use.</p>
 <div class="doc doc-children">
+</div>
+</div>
+</div>
+<div class="doc doc-object doc-module">
+<h2 class="doc doc-heading" id="aero_client.jobs">
+<span class="doc doc-object-name doc-module-name">jobs</span>
+</h2>
+<div class="doc doc-contents">
+<a href="https://github.com/NSF-RESUME/aero-client/blob/main/" target="_blank">
+<code>
+          /opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/aero_client/jobs.py
+        </code>
+</a>
+</div>
+<div class="doc doc-contents">
+<p>AERO flow compute function definition.</p>
+<div class="doc doc-children">
+<div class="doc doc-object doc-function">
+<h3 class="doc doc-heading" id="aero_client.jobs.commit_analysis">
+<span class="doc doc-object-name doc-function-name">commit_analysis()</span>
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nf">commit_analysis</span><span class="p">(</span><span class="o">*</span><span class="n">arglist</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
+</span></code></pre></div>
+<div class="doc doc-contents">
+<p>Commit metadata of analysis function to database.</p>
+<table>
+<thead>
+<tr>
+<th><span class="doc-section-title">RETURNS</span></th>
+<th><span>DESCRIPTION</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>dict</code>
+</td>
+<td class="doc-returns-details">
+<div class="doc-md-description">
+<p>Response from database update.</p>
+</div>
+<p>
+<span class="doc-returns-annotation">
+<b>TYPE:</b>
+<code><span title="dict">dict</span></code>
+</span>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h3 class="doc doc-heading" id="aero_client.jobs.database_commit">
+<span class="doc doc-object-name doc-function-name">database_commit()</span>
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nf">database_commit</span><span class="p">(</span>
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>    <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">]</span>
+</span></code></pre></div>
+<div class="doc doc-contents">
+<p>Commit ingested metadata to database</p>
+<table>
+<thead>
+<tr>
+<th><span class="doc-section-title">RETURNS</span></th>
+<th><span>DESCRIPTION</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>dict</code>
+</td>
+<td class="doc-returns-details">
+<div class="doc-md-description">
+<p>Response dictionary returned by user function with optional metrics appended.</p>
+</div>
+<p>
+<span class="doc-returns-annotation">
+<b>TYPE:</b>
+<code><span title="dict">dict</span>[<span title="str">str</span>, <span title="int">int</span> | <span title="float">float</span> | <span title="str">str</span> | <span title="dict">dict</span>]</code>
+</span>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h3 class="doc doc-heading" id="aero_client.jobs.download">
+<span class="doc doc-object-name doc-function-name">download()</span>
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nf">download</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+</span></code></pre></div>
+<div class="doc doc-contents">
+<p>Download data from user-specified repository.</p>
+<table>
+<thead>
+<tr>
+<th><span class="doc-section-title">RETURNS</span></th>
+<th><span>DESCRIPTION</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<span class="doc-returns-annotation">
+<code><span title="tuple">tuple</span>[<span title="str">str</span>, <span title="str">str</span>]</code>
+</span>
+</td>
+<td class="doc-returns-details">
+<div class="doc-md-description">
+<p>tuple[str, str]: Path to the data and its
+associated extension.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h3 class="doc doc-heading" id="aero_client.jobs.get_versions">
+<span class="doc doc-object-name doc-function-name">get_versions()</span>
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nf">get_versions</span><span class="p">(</span><span class="o">*</span><span class="n">function_params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
+</span></code></pre></div>
+<div class="doc doc-contents">
+<p>Get the desired version of the source data.</p>
+<table>
+<thead>
+<tr>
+<th><span class="doc-section-title">RETURNS</span></th>
+<th><span>DESCRIPTION</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>dict</code>
+</td>
+<td class="doc-returns-details">
+<div class="doc-md-description">
+<p>Function parameters to send to user-defined analysis function.</p>
+</div>
+<p>
+<span class="doc-returns-annotation">
+<b>TYPE:</b>
+<code><span title="dict">dict</span></code>
+</span>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1494,6 +1785,42 @@ presented in the format {"name": {"url": <url data="" fetch="" the="" to="">}}. 
 </div>
 </div>
 <div class="doc doc-object doc-function">
+<h3 class="doc doc-heading" id="aero_client.utils._client_auth">
+<span class="doc doc-object-name doc-function-name">_client_auth()</span>
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nf">_client_auth</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</span></code></pre></div>
+<div class="doc doc-contents">
+<p>Authorizes the client to communicate with AERO</p>
+<table>
+<thead>
+<tr>
+<th><span class="doc-section-title">RETURNS</span></th>
+<th><span>DESCRIPTION</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>str</code>
+</td>
+<td class="doc-returns-details">
+<div class="doc-md-description">
+<p>Access token of the authorizer</p>
+</div>
+<p>
+<span class="doc-returns-annotation">
+<b>TYPE:</b>
+<code><span title="str">str</span></code>
+</span>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="doc doc-object doc-function">
 <h3 class="doc doc-heading" id="aero_client.utils.aero_format">
 <span class="doc doc-object-name doc-function-name">aero_format()</span>
 </h3>
@@ -1572,7 +1899,7 @@ it does not, it generates the tokens and updates the token file.</p>
 <p>
 <span class="doc-param-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -1598,7 +1925,7 @@ it does not, it generates the tokens and updates the token file.</p>
 <p>
 <span class="doc-returns-annotation">
 <b>TYPE:</b>
-<code>str</code>
+<code><span title="str">str</span></code>
 </span>
 </p>
 </td>
@@ -1682,7 +2009,7 @@ it does not, it generates the tokens and updates the token file.</p>
 <div class="md-dialog__inner md-typeset"></div>
 </div>
 <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "navigation.footer", "navigation.path", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
-<script src="../assets/javascripts/bundle.5090c770.min.js"></script>
+<script src="../assets/javascripts/bundle.c8b220af.min.js"></script>
 <script src="https://unpkg.com/browse/mermaid@11.0.2/dist/mermaid.min.js"></script>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script src="../javascripts/mathjax.js"></script>
