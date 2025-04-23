@@ -73,7 +73,6 @@ def list_metadata(
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
 
     url = urllib.parse.urljoin(CONF.server_url, metadata_type)
-    print(url)
     req = session.get(
         url=url,
         headers=headers,
@@ -240,6 +239,8 @@ def get_flow(flow_id: str, inputs_only: bool = True) -> dict:
         "Content-type": "application/json",
     }
 
+    print(headers)
+
     response = requests.get(
         f"{CONF.server_url}/flow/{flow_id}",
         headers=headers,
@@ -249,7 +250,7 @@ def get_flow(flow_id: str, inputs_only: bool = True) -> dict:
     assert response.status_code == 200, str(response.content, encoding="utf-8")
 
     if inputs_only:
-        return json.loads(response.json()["function_args"])["kwargs"]
+        return response.json()["function_args"]["kwargs"]
     else:
         return response.json()
 

@@ -46,6 +46,8 @@ def download(*args, **kwargs) -> tuple[str, str]:
     )
     flow = response.json()
 
+    assert response == 200, response
+
     data = flow["contributed_to"][
         0
     ]  # assuming only one contribution / ingesting flow for now
@@ -153,8 +155,9 @@ def get_versions(*function_params) -> dict:
 
     task_start: float
     task_end: float
+    metrics: bool = function_params.get("metrics", False)
 
-    if function_params["metrics"] is True:
+    if metrics is True:
         task_start = time.time_ns()
 
     tokens = load_tokens()
@@ -176,15 +179,11 @@ def get_versions(*function_params) -> dict:
                 )
 
                 assert response.status_code == 200, response.content
-                md["version"] = response.json()["data_version"]["version"]
-                md["file_bn"] = response.json()["data_version"]["data_file"][
-                    "file_name"
-                ]
-                md["encoding"] = response.json()["data_version"]["data_file"][
-                    "encoding"
-                ]
+                md["version"] = response.json()["version"]
+                md["file_bn"] = response.json()["data_file"]["file_name"]
+                md["encoding"] = response.json()["data_file"]["encoding"]
 
-    if function_params["metrics"] is True:
+    if metrics is True:
         task_end = time.time_ns()
         function_params["get_versions_metrics"] = {
             "task_start": task_start,
@@ -210,8 +209,9 @@ def commit_analysis(*arglist) -> dict:
 
     task_start: float
     task_end: float
+    metrics: bool = arglist.get("metrics", False)
 
-    if arglist["metrics"] is True:
+    if metrics is True:
         task_start = time.time_ns()
 
     tokens = load_tokens()
@@ -237,7 +237,7 @@ def commit_analysis(*arglist) -> dict:
         assert response.status_code == 200, response.content
         responses.append(response.json())
 
-    if arglist["metrics"] is True:
+    if metrics is True:
         task_end = time.time_ns()
         responses.append(
             {

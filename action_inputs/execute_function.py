@@ -18,7 +18,6 @@ commit_function_uuid = os.environ["COMMIT_FUNCTION_UUID"]
 
 
 def register(endpoint_uuid, custom_function_uuid):
-    import json
     from uuid import uuid4
     from aero_client.api import register_flow
 
@@ -44,7 +43,7 @@ def register(endpoint_uuid, custom_function_uuid):
         description=description,
     )
 
-    return json.loads(fl["function_args"])["kwargs"]
+    return fl["function_args"]["kwargs"]
 
 
 def run_function(act: Action, run_inputs: str | None = None):
