@@ -46,7 +46,7 @@ def download(*args, **kwargs) -> tuple[str, str]:
     )
     flow = response.json()
 
-    assert response == 200, response
+    assert response.status_code == 200, response
 
     data = flow["contributed_to"][
         0
@@ -155,7 +155,7 @@ def get_versions(*function_params) -> dict:
 
     task_start: float
     task_end: float
-    metrics: bool = function_params.get("metrics", False)
+    metrics: bool = False  # function_params.get("metrics", False)
 
     if metrics is True:
         task_start = time.time_ns()
