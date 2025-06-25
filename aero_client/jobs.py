@@ -209,7 +209,7 @@ def commit_analysis(*arglist) -> dict:
 
     task_start: float
     task_end: float
-    metrics: bool = arglist.get("metrics", False)
+    metrics: bool = False  # arglist.get("metrics", False)
 
     if metrics is True:
         task_start = time.time_ns()
@@ -226,12 +226,11 @@ def commit_analysis(*arglist) -> dict:
         assert "output_data" in task_kwargs["aero"]
         assert "flow_id" in task_kwargs["aero"]
 
-        # do something about provenance here
         response = requests.post(
             f"{CONF.server_url}/prov/new",
             headers=aero_headers,
             verify=False,
-            data=json.dumps(task_kwargs),
+            data=json.dumps(task_kwargs["aero"])
         )
 
         assert response.status_code == 200, response.content
