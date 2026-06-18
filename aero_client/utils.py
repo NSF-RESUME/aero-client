@@ -1,4 +1,4 @@
-"""DSaaS client util module"""
+"""AERO client util module"""
 
 import codecs
 import dill

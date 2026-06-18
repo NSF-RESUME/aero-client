@@ -1,4 +1,4 @@
-"""DSaaS Client error definition module"""
+"""AERO client error definition module"""
 
 
 class ClientError(Exception):

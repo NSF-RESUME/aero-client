@@ -23,7 +23,7 @@ def register(endpoint_uuid, custom_function_uuid):
 
     output_data = {
         "out0": {  # key here needs to match the name of your parameter, will also be the name of the record in the db
-            "tmpdir": "~/postdoc/DSaaS-client",
+            "tmpdir": "~/postdoc/aero-client",
             "url": "https://g-c952d0.1305de.36fe.data.globus.org/output/synthetic_data.txt",
             "collection_uuid": "ff01d581-69c4-44f0-bb4c-ed4484706226",
             "collection_url": "https://g-8b681.fd635.8443.data.globus.org/valerie/",

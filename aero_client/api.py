@@ -1,4 +1,4 @@
-"""DSaaS client API module"""
+"""AERO client API module"""
 
 import json
 import logging
@@ -259,4 +259,4 @@ def get_flow(flow_id: str, inputs_only: bool = True) -> dict:
 def globus_logout():
     """Remove the Globus Auth token file to invoke login on next API access."""
     logger.debug("Removing Globus auth tokens.")
-    Path(CONF.dsaas_dir, CONF.token_file).unlink()
+    Path(CONF.aero_dir, CONF.token_file).unlink()

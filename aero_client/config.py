@@ -1,5 +1,5 @@
 """
-DSaaS client config module.
+AERO client config module.
 """
 
 import os

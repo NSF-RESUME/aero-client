@@ -32,7 +32,7 @@ def register_analysis():
     endpoint_uuid = "87e6579f-3408-41ee-9429-6559eb8cb713"  # update to your endpoint
     function_uuid = "87dc98aa-e51e-44e8-887e-6ae9c9801bb3"  # update to be you function
     function_args = {
-        "arg1": "/Users/valeriehayot-sasson/postdoc/DSaaS-client/test_file.out",
+        "arg1": "/Users/valeriehayot-sasson/postdoc/aero-client/test_file.out",
         "arg2": 2,
     }  # update params as needed, keys need to match function param names
 

@@ -18,12 +18,12 @@ def main():
     TODO
     """
     parser = argparse.ArgumentParser(
-        description="DSaaS client for querying stored data",
+        description="AERO client for querying stored data",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available actions")
     list_parser = subparsers.add_parser("list", help="List aero metadata")
     create_parser = subparsers.add_parser(
-        "create", help="Create a source to store in DSaas"
+        "create", help="Create a source to store in AERO"
     )
     # get_parser = subparsers.add_parser("get", help="Get source table from server")
     search_parser = subparsers.add_parser("search", help="Search sources")
