@@ -23,6 +23,60 @@ def download(*args, **kwargs) -> tuple[str, str]:
     task_start: float
     task_end: float
 
+    def _is_delta_sharing(data) -> bool:
+        """Test if the data url points to a Delta Sharing profile file."""
+        if data["url"].startswith("file://") and "#" in data["url"]:
+            try:
+                f = data["url"][len("file://"): data["url"].find("#")]
+                with open(f) as fin:
+                    profile = json.load(fin)
+                    return "bearerToken" in profile
+            except Exception:
+                pass
+        return False
+
+    def _download_delta_sharing(data, fn) -> tuple[bytes, str, str]:
+        """Download data via Delta Sharing and write it to ``fn`` as CSV.
+
+        Returns:
+            tuple[bytes, str, str]: The file content (bytes), extension, encoding.
+        """
+        import delta_sharing
+        from io import StringIO
+
+        df = delta_sharing.load_as_pandas(data["url"])
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False)
+        ext = "csv"
+        encoding = "utf-8"
+        content = csv_buffer.getvalue()
+
+        with open(fn, "w+") as f:
+            f.write(content)
+
+        return content.encode("utf-8"), ext, encoding
+
+    def _download_http(data, fn) -> tuple[bytes, str | None, str | None]:
+        """Download data over HTTP and write it to ``fn``.
+
+        Returns:
+            tuple: The file content (bytes), extension, encoding.
+        """
+        response = requests.get(data["url"])
+        content_type = response.headers["content-type"]
+        encoding = response.encoding
+        ext = guess_extension(content_type.split(";")[0])
+        content = response.content
+
+        try:
+            with open(fn, "w+") as f:
+                f.write(content.decode(encoding=encoding))
+        except UnicodeDecodeError:
+            with open(fn, "wb") as f:
+                f.write(content)
+
+        return content, ext, encoding
+
     if "metrics" in kwargs and kwargs["metrics"] is True:
         task_start = time.time_ns()
 
@@ -57,45 +111,10 @@ def download(*args, **kwargs) -> tuple[str, str]:
     bn = str(uuid.uuid4())
     fn = Path(TEMP_DIR, bn)
 
-    use_delta_sharing = False
-    # test if url looks like a delta_sharing token file
-    if data["url"].startswith("file://") and "#" in data["url"]:
-        try:
-            f = data["url"][len("file://"): data["url"].find("#")]
-            with open(f) as fin:
-                tokens = json.load(fin)
-                if "bearerToken" in tokens:
-                    use_delta_sharing = True
-        except Exception:
-            pass
-
-    if use_delta_sharing:
-        import delta_sharing
-        from io import StringIO
-
-        df = delta_sharing.load_as_pandas(data["url"])
-        csv_buffer = StringIO()
-        df.to_csv(csv_buffer, index=False)
-        ext = "csv"
-        content = csv_buffer.getvalue()
-        encoding = "utf-8"
-
-        with open(fn, "w+") as f:
-            f.write(content)
-        content = content.encode("utf-8")
+    if _is_delta_sharing(data):
+        content, ext, encoding = _download_delta_sharing(data, fn)
     else:
-        response = requests.get(data["url"])
-        content_type = response.headers["content-type"]
-        encoding = response.encoding
-        ext = guess_extension(content_type.split(";")[0])
-        content = response.content
-
-        try:
-            with open(fn, "w+") as f:
-                f.write(content.decode(encoding=encoding))
-        except UnicodeDecodeError:
-            with open(fn, "wb") as f:
-                f.write(content)
+        content, ext, encoding = _download_http(data, fn)
 
     kwargs["aero"]["output_data"][data["name"]]["id"] = data["id"]
     kwargs["aero"]["output_data"][data["name"]]["file"] = str(fn)
