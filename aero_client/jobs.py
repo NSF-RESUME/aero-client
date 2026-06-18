@@ -12,16 +12,12 @@ def download(*args, **kwargs) -> tuple[str, str]:
     import pathlib
     import requests
     import uuid
-    import time
     import json
     from mimetypes import guess_extension
     from pathlib import Path
 
     from aero_client.utils import CONF
     from aero_client.utils import load_tokens
-
-    task_start: float
-    task_end: float
 
     def _is_delta_sharing(data) -> bool:
         """Test if the data url points to a Delta Sharing profile file."""
@@ -77,9 +73,6 @@ def download(*args, **kwargs) -> tuple[str, str]:
 
         return content, ext, encoding
 
-    if "metrics" in kwargs and kwargs["metrics"] is True:
-        task_start = time.time_ns()
-
     outputs = list(kwargs["aero"]["output_data"].items())
 
     if "temp_dir" in outputs[0][1]:
@@ -127,14 +120,6 @@ def download(*args, **kwargs) -> tuple[str, str]:
     kwargs["aero"]["output_data"][data["name"]]["download"] = True
     kwargs["aero"]["output_data"][data["name"]]["encoding"] = encoding
 
-    if "metrics" in kwargs and kwargs["metrics"] is True:
-        task_end = time.time_ns()
-        kwargs["download_metrics"] = {
-            "task_start": task_start,
-            "task_end": task_end,
-            "duration": task_end - task_start,
-        }
-
     return args, kwargs
 
 
@@ -142,19 +127,12 @@ def database_commit(*args, **kwargs) -> dict[str, int | float | str | dict]:
     """Commit ingested metadata to database
 
     Returns:
-        dict: Response dictionary returned by user function with optional metrics appended.
+        dict: Response dictionary returned by user function.
     """
     import json
     import requests
-    import time
     from aero_client.utils import CONF
     from aero_client.utils import load_tokens
-
-    task_start: float
-    task_end: float
-
-    if "metrics" in kwargs and kwargs["metrics"] is True:
-        task_start = time.time_ns()
 
     tokens = load_tokens()
 
@@ -173,20 +151,7 @@ def database_commit(*args, **kwargs) -> dict[str, int | float | str | dict]:
 
     assert response.status_code == 200, response.json()
 
-    if "metrics" in kwargs and kwargs["metrics"] is True:
-        task_end = time.time_ns()
-        kwargs["download_metrics"] = {
-            "task_start": task_start,
-            "task_end": task_end,
-            "duration": task_end - task_start,
-        }
-
-        outkwargs = response.json()
-        outkwargs["database_commit"] = kwargs["download_metrics"]
-    else:
-        outkwargs = response.json()
-
-    return outkwargs
+    return response.json()
 
 
 def get_versions(*function_params) -> dict:
@@ -196,16 +161,8 @@ def get_versions(*function_params) -> dict:
         dict: Function parameters to send to user-defined analysis function.
     """
     import requests
-    import time
     from aero_client.utils import CONF
     from aero_client.utils import load_tokens
-
-    task_start: float
-    task_end: float
-    metrics: bool = False  # function_params.get("metrics", False)
-
-    if metrics is True:
-        task_start = time.time_ns()
 
     tokens = load_tokens()
 
@@ -230,14 +187,6 @@ def get_versions(*function_params) -> dict:
                 md["file_bn"] = response.json()["data_file"]["file_name"]
                 md["encoding"] = response.json()["data_file"]["encoding"]
 
-    if metrics is True:
-        task_end = time.time_ns()
-        function_params["get_versions_metrics"] = {
-            "task_start": task_start,
-            "task_end": task_end,
-            "duration": task_end - task_start,
-        }
-
     return function_params
 
 
@@ -249,17 +198,9 @@ def commit_analysis(*arglist) -> dict:
     """
     import json
     import requests
-    import time
 
     from aero_client.utils import CONF
     from aero_client.utils import load_tokens
-
-    task_start: float
-    task_end: float
-    metrics: bool = False  # arglist.get("metrics", False)
-
-    if metrics is True:
-        task_start = time.time_ns()
 
     tokens = load_tokens()
 
@@ -282,17 +223,5 @@ def commit_analysis(*arglist) -> dict:
 
         assert response.status_code == 200, response.content
         responses.append(response.json())
-
-    if metrics is True:
-        task_end = time.time_ns()
-        responses.append(
-            {
-                "get_versions_metrics": {
-                    "task_start": task_start,
-                    "task_end": task_end,
-                    "duration": task_end - task_start,
-                }
-            }
-        )
 
     return responses
