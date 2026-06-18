@@ -13,6 +13,7 @@ def download(*args, **kwargs) -> tuple[str, str]:
     import requests
     import uuid
     import time
+    import json
     from mimetypes import guess_extension
     from pathlib import Path
 
@@ -52,29 +53,56 @@ def download(*args, **kwargs) -> tuple[str, str]:
         0
     ]  # assuming only one contribution / ingesting flow for now
 
-    response = requests.get(data["url"])
-    content_type = response.headers["content-type"]
-    encoding = response.encoding
-    ext = guess_extension(content_type.split(";")[0])
-
+    TEMP_DIR.mkdir(exist_ok=True, parents=True)
     bn = str(uuid.uuid4())
     fn = Path(TEMP_DIR, bn)
 
-    TEMP_DIR.mkdir(exist_ok=True, parents=True)
+    use_delta_sharing = False
+    # test if url looks like a delta_sharing token file
+    if data["url"].startswith("file://") and "#" in data["url"]:
+        try:
+            f = data["url"][len("file://"): data["url"].find("#")]
+            with open(f) as fin:
+                tokens = json.load(fin)
+                if "bearerToken" in tokens:
+                    use_delta_sharing = True
+        except Exception:
+            pass
 
-    try:
+    if use_delta_sharing:
+        import delta_sharing
+        from io import StringIO
+
+        df = delta_sharing.load_as_pandas(data["url"])
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False)
+        ext = "csv"
+        content = csv_buffer.getvalue()
+        encoding = "utf-8"
+
         with open(fn, "w+") as f:
-            f.write(response.content.decode(encoding=encoding))
-    except UnicodeDecodeError:
-        with open(fn, "wb") as f:
-            f.write(response.content)
+            f.write(content)
+        content = content.encode("utf-8")
+    else:
+        response = requests.get(data["url"])
+        content_type = response.headers["content-type"]
+        encoding = response.encoding
+        ext = guess_extension(content_type.split(";")[0])
+        content = response.content
+
+        try:
+            with open(fn, "w+") as f:
+                f.write(content.decode(encoding=encoding))
+        except UnicodeDecodeError:
+            with open(fn, "wb") as f:
+                f.write(content)
 
     kwargs["aero"]["output_data"][data["name"]]["id"] = data["id"]
     kwargs["aero"]["output_data"][data["name"]]["file"] = str(fn)
     kwargs["aero"]["output_data"][data["name"]]["file_bn"] = bn
     kwargs["aero"]["output_data"][data["name"]]["file_format"] = ext
     kwargs["aero"]["output_data"][data["name"]]["checksum"] = hashlib.md5(
-        response.content
+        content
     ).hexdigest()
     kwargs["aero"]["output_data"][data["name"]]["size"] = fn.stat().st_size
     kwargs["aero"]["output_data"][data["name"]]["download"] = True
