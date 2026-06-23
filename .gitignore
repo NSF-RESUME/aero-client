@@ -5,3 +5,5 @@ site
 experiment_data
 
 scratch/
+tests/data/config.toml
+tests/data/client_tokens.json

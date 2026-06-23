@@ -16,7 +16,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "fastapi",
     "pre-commit",
+    "pytest",
+    "uvicorn",
     "tox"
 ]
 

@@ -29,12 +29,10 @@ class ClientConf:  # (BaseModel):
     ...
     """
 
-    portal_client_id: str = os.getenv(
-        "PORTAL_CLIENT_ID"
-    )  # v"082d6a19-da16-4552-9944-e081cdaff7bc"
+    portal_client_id: str = os.getenv("PORTAL_CLIENT_ID")  # type: ignore
     aero_dir: Path = field(default=Path("~/.local/share/aero").expanduser())
     token_file: str = "client_tokens.json"  # field(default_factory=str, default="client_tokens.json", init=False)
-    server_address: Path = "https://aero.emews.org:5001"
+    server_address: str = "https://aero.emews.org:5001"
     server_url: str = f"{server_address}/osprey/api/v1.0/"
 
     def __post_init__(self):
@@ -45,7 +43,7 @@ class ClientConf:  # (BaseModel):
             _conf_symlink_path.symlink_to(target=self.aero_dir)
 
 
-def load_conf(conf_file: str, update: bool = False) -> None:
+def load_conf(conf_file: str, update: bool = False, symlink: bool = True) -> ClientConf:
     if update:
         _conf_symlink_path.unlink(missing_ok=True)
 
@@ -65,12 +63,13 @@ def load_conf(conf_file: str, update: bool = False) -> None:
     conf_kwargs["server_url"] = f"{conf_kwargs['server_address']}"  # /osprey/api/v1.0/"
     conf_kwargs["aero_dir"] = Path(config["aero"]["cache_dir"]).expanduser().absolute()
 
-    Path.mkdir(conf_kwargs["aero_dir"], parents=True, exist_ok=True)
+    if symlink:
+        Path.mkdir(conf_kwargs["aero_dir"], parents=True, exist_ok=True)
 
-    try:
-        if _conf_symlink_path.readlink() != conf_kwargs["aero_dir"]:
+        try:
+            if _conf_symlink_path.readlink() != conf_kwargs["aero_dir"]:
+                shutil.copy(conf_file, (Path(conf_kwargs["aero_dir"]) / _conf_fn))
+        except FileNotFoundError:
             shutil.copy(conf_file, (Path(conf_kwargs["aero_dir"]) / _conf_fn))
-    except FileNotFoundError:
-        shutil.copy(conf_file, (Path(conf_kwargs["aero_dir"]) / _conf_fn))
 
     return ClientConf(**conf_kwargs)

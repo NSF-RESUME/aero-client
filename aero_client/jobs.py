@@ -1,7 +1,7 @@
 """AERO flow compute function definition."""
 
 
-def download(*args, **kwargs) -> tuple[str, str]:
+def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
     """Download data from user-specified repository.
 
     Returns:
@@ -66,7 +66,7 @@ def download(*args, **kwargs) -> tuple[str, str]:
 
         try:
             with open(fn, "w+") as f:
-                f.write(content.decode(encoding=encoding))
+                f.write(content.decode(encoding=encoding)) # type: ignore
         except UnicodeDecodeError:
             with open(fn, "wb") as f:
                 f.write(content)

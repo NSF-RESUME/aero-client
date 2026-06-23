@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import mimetypes
+import os
 import requests
 import urllib
 import uuid
@@ -30,8 +31,24 @@ from aero_client.error import ClientError
 
 logger = logging.getLogger(__name__)
 
+_CONF_ENV_VAR = "AERO_CONFIG_FILE"  # set to a config.toml path to override the default
+
+
+def _load_conf_from_env_or_default():
+    """Load CONF at import time.
+
+    If ``AERO_CONFIG_FILE`` is set, load that config file without touching the
+    ``~/.aero`` symlink; otherwise load the standard ``~/.aero/config.toml``.
+    Raises if the selected config cannot be loaded.
+    """
+    override = os.environ.get(_CONF_ENV_VAR)
+    if override:
+        return load_conf(str(Path(override).expanduser()), symlink=False)
+    return load_conf(_conf_symlink_path / _conf_fn)
+
+
 try:
-    CONF = load_conf(_conf_symlink_path / _conf_fn)
+    CONF = _load_conf_from_env_or_default()
 except Exception as e:
     logger.error(f"{e}")
     raise e
