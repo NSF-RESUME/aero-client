@@ -52,13 +52,13 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
 
         return content.encode("utf-8"), ext, encoding
 
-    def _download_http(data, fn) -> tuple[bytes, str | None, str | None]:
-        """Download data over HTTP and write it to ``fn``.
+    def _http_fetch(url, fn, auth=None) -> tuple[bytes, str | None, str | None]:
+        """Fetch ``url`` over HTTP (optionally with auth) and write it to ``fn``.
 
         Returns:
             tuple: The file content (bytes), extension, encoding.
         """
-        response = requests.get(data["url"])
+        response = requests.get(url, auth=auth)
         content_type = response.headers["content-type"]
         encoding = response.encoding
         ext = guess_extension(content_type.split(";")[0])
@@ -72,6 +72,24 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
                 f.write(content)
 
         return content, ext, encoding
+
+    def _download_http(data, fn) -> tuple[bytes, str | None, str | None]:
+        """Download data over plain HTTP and write it to ``fn``."""
+        return _http_fetch(data["url"], fn)
+
+    def _is_http_basic_auth(data) -> bool:
+        """Test if the url embeds basic-auth creds (``<url>:user=<u>:pwd=<p>``)."""
+        return ":user=" in data["url"] and ":pwd=" in data["url"]
+
+    def _download_http_basic_auth(data, fn) -> tuple[bytes, str | None, str | None]:
+        """Download over HTTP with basic auth.
+
+        Credentials are embedded in the url as ``<url>:user=<user>:pwd=<pwd>``;
+        they are stripped off and sent as HTTP Basic Auth.
+        """
+        url, _, rest = data["url"].partition(":user=")
+        user, _, pwd = rest.partition(":pwd=")
+        return _http_fetch(url, fn, auth=(user, pwd))
 
     outputs = list(kwargs["aero"]["output_data"].items())
 
@@ -106,6 +124,8 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
 
     if _is_delta_sharing(data):
         content, ext, encoding = _download_delta_sharing(data, fn)
+    elif _is_http_basic_auth(data):
+        content, ext, encoding = _download_http_basic_auth(data, fn)
     else:
         content, ext, encoding = _download_http(data, fn)
 
@@ -154,11 +174,11 @@ def database_commit(*args, **kwargs) -> dict[str, int | float | str | dict]:
     return response.json()
 
 
-def get_versions(*function_params) -> dict:
+def get_versions(*function_params) -> tuple:
     """Get the desired version of the source data.
 
     Returns:
-        dict: Function parameters to send to user-defined analysis function.
+        Function parameters to send to user-defined analysis function.
     """
     import requests
     from aero_client.utils import CONF
@@ -190,7 +210,7 @@ def get_versions(*function_params) -> dict:
     return function_params
 
 
-def commit_analysis(*arglist) -> dict:
+def commit_analysis(*arglist) -> list:
     """Commit metadata of analysis function to database.
 
     Returns:
