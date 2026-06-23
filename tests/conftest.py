@@ -26,10 +26,27 @@ class ServerHandle:
 
     base_url: str
     flows: dict = field(default_factory=dict)
+    auth: tuple[str, str] = ("user", "pass")
 
-    def add_flow(self, flow_id: str, filename: str, name: str, id: str) -> None:
-        """Register the data dict returned by ``GET /flow/{flow_id}``."""
-        self.flows[flow_id] = {"filename": filename, "name": name, "id": id}
+    def add_flow(
+        self,
+        flow_id: str,
+        filename: str,
+        name: str,
+        id: str,
+        secure: bool = False,
+    ) -> None:
+        """Register the data dict returned by ``GET /flow/{flow_id}``.
+
+        When ``secure`` is True the returned url points at the basic-auth
+        protected ``/secure-files`` endpoint with credentials embedded.
+        """
+        self.flows[flow_id] = {
+            "filename": filename,
+            "name": name,
+            "id": id,
+            "secure": secure,
+        }
 
 
 @pytest.fixture

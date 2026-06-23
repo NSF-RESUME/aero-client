@@ -60,7 +60,7 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
         """
         response = requests.get(url, auth=auth)
         content_type = response.headers["content-type"]
-        encoding = response.encoding
+        encoding = "utf-8" if response.encoding is None else response.encoding
         ext = guess_extension(content_type.split(";")[0])
         content = response.content
 
