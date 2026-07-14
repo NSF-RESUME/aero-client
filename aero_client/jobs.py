@@ -13,6 +13,7 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
     import requests
     import uuid
     import json
+    import urllib.parse
     from mimetypes import guess_extension
     from pathlib import Path
 
@@ -73,23 +74,34 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
 
         return content, ext, encoding
 
-    def _download_http(data, fn) -> tuple[bytes, str | None, str | None]:
-        """Download data over plain HTTP and write it to ``fn``."""
-        return _http_fetch(data["url"], fn)
+    def _load_basic_auth(url):
+        """Return ``(username, password)`` for ``url``'s host, or ``None``.
 
-    def _is_http_basic_auth(data) -> bool:
-        """Test if the url embeds basic-auth creds (``<url>:user=<u>:pwd=<p>``)."""
-        return ":user=" in data["url"] and ":pwd=" in data["url"]
-
-    def _download_http_basic_auth(data, fn) -> tuple[bytes, str | None, str | None]:
-        """Download over HTTP with basic auth.
-
-        Credentials are embedded in the url as ``<url>:user=<user>:pwd=<pwd>``;
-        they are stripped off and sent as HTTP Basic Auth.
+        Credentials are read from ``<aero_dir>/<host>.yaml`` (i.e. the
+        ``~/.aero`` directory), a YAML file with ``username`` and ``password``
+        keys named after the full url host (e.g. ``travelmidwest.com.yaml``).
+        If no such file exists the download proceeds without auth.
         """
-        url, _, rest = data["url"].partition(":user=")
-        user, _, pwd = rest.partition(":pwd=")
-        return _http_fetch(url, fn, auth=(user, pwd))
+        host = urllib.parse.urlparse(url).hostname
+        if not host:
+            return None
+        creds_file = Path(CONF.aero_dir) / f"{host}.yaml"
+        if not creds_file.is_file():
+            return None
+        import yaml
+
+        with open(creds_file) as f:
+            creds = yaml.safe_load(f)
+        return creds["username"], creds["password"]
+
+    def _download_http(data, fn) -> tuple[bytes, str | None, str | None]:
+        """Download data over HTTP and write it to ``fn``.
+
+        Uses HTTP Basic Auth if a per-host credentials file is present (see
+        ``_load_basic_auth``); otherwise performs a plain GET.
+        """
+        auth = _load_basic_auth(data["url"])
+        return _http_fetch(data["url"], fn, auth=auth)
 
     outputs = list(kwargs["aero"]["output_data"].items())
 
@@ -124,8 +136,6 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
 
     if _is_delta_sharing(data):
         content, ext, encoding = _download_delta_sharing(data, fn)
-    elif _is_http_basic_auth(data):
-        content, ext, encoding = _download_http_basic_auth(data, fn)
     else:
         content, ext, encoding = _download_http(data, fn)
 

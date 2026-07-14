@@ -74,12 +74,19 @@ def test_download_against_local_server(download_server, tmp_path, monkeypatch):
 def test_download_basic_auth(download_server, tmp_path, monkeypatch):
     import requests
 
-    # Flow url points at the basic-auth endpoint with creds embedded as
-    # <url>:user=<u>:pwd=<p> -- download() must strip and apply them.
+    # Flow url points at the basic-auth endpoint (no creds in the url).
     download_server.add_flow(
         "auth-flow", FILENAME, name="post_preds", id="data-1", secure=True
     )
     _point_conf_at_server(download_server, monkeypatch)
+
+    # Credentials come from <aero_dir>/<host>.yaml (i.e. ~/.aero/<host>.yaml).
+    # The server host is 127.0.0.1, so download() reads 127.0.0.1.yaml.
+    creds_dir = tmp_path / "aero"
+    creds_dir.mkdir()
+    monkeypatch.setattr(utils.CONF, "aero_dir", creds_dir)
+    user, pwd = download_server.auth
+    (creds_dir / "127.0.0.1.yaml").write_text(f"username: {user}\npassword: {pwd}\n")
 
     # Sanity: the secure endpoint really does require auth.
     unauth = requests.get(f"{download_server.base_url}/secure-files/{quote(FILENAME)}")

@@ -45,7 +45,7 @@ def create_app(
             Held by reference, so callers may mutate it after construction (e.g. a
             test registering a flow on a fixture). When an entry has
             ``secure=True``, ``/flow`` returns a url pointing at ``/secure-files``
-            with credentials embedded as ``...:user=<u>:pwd=<p>``.
+            (which requires HTTP Basic Auth using ``auth``).
         default: entry returned by ``/flow`` when the id is not in ``flows``.
         auth: the ``(username, password)`` accepted by ``/secure-files``.
     """
@@ -84,12 +84,7 @@ def create_app(
         if entry is None:
             raise HTTPException(status_code=404, detail=f"unknown flow {flow_id}")
         if entry.get("secure"):
-            file_url = (
-                str(request.base_url)
-                + "secure-files/"
-                + entry["filename"]
-                + f":user={auth[0]}:pwd={auth[1]}"
-            )
+            file_url = str(request.base_url) + "secure-files/" + entry["filename"]
         else:
             file_url = str(request.base_url) + "files/" + entry["filename"]
         return {

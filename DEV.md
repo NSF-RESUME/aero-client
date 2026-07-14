@@ -75,8 +75,9 @@ How they work:
      (`{"contributed_to": [{"id", "name", "url"}]}`) that `download()` parses.
    - `GET /files/{filename}` → serves a file from `tests/data/`.
    - `GET /secure-files/{filename}` → same, but behind HTTP Basic Auth (used to
-     test the basic-auth download path). For a `secure` flow, `/flow` returns a url
-     with credentials embedded as `<url>:user=<u>:pwd=<p>`.
+     test the basic-auth download path). For a `secure` flow, `/flow` returns a
+     plain url pointing at `/secure-files`; `download()` supplies the credentials
+     from a per-host file (see below).
 2. **A pytest fixture** (`download_server` in [`tests/conftest.py`](tests/conftest.py))
    starts that app with `uvicorn` on a free port in a background thread, yields a
    handle exposing `.base_url` and `.add_flow(...)`, and shuts it down afterwards.
@@ -89,6 +90,19 @@ How they work:
 
 There are two cases: a plain HTTP download and a Basic-Auth download (which also
 asserts the secure endpoint returns `401` when unauthenticated).
+
+For the Basic-Auth case, `download()` reads credentials from a YAML file in the
+`~/.aero` directory named after the full URL host, with `username` and `password`
+keys — e.g. for `https://travelmidwest.com/...` it reads
+`~/.aero/travelmidwest.com.yaml`:
+
+```yaml
+username: xxx
+password: xxx
+```
+
+If no such file exists, the download falls back to a plain (unauthenticated) GET.
+The test writes a `<host>.yaml` into a temp dir it points `CONF.aero_dir` at.
 
 Run just these:
 

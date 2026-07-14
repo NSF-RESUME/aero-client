@@ -11,7 +11,8 @@ dependencies = [
     "pandas",
     "globus_sdk",
     "globus_compute_sdk",
-    "dill"
+    "dill",
+    "pyyaml"
 ]
 
 [project.optional-dependencies]
