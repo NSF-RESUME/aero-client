@@ -202,7 +202,7 @@ def register_flow(
     data["commit_function_uuid"] = commit_function_uuid
     data["flow_kwargs"] = kwargs
     data["rule"] = policy
-    data["timer_delay"] = timer_delay
+    data["timer"] = timer_delay
 
     if len(tasks) > 1:
         data["tasks"] = tasks
