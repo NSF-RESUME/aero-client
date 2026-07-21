@@ -59,6 +59,22 @@ _TOKEN_PATH = Path(CONF.aero_dir, CONF.token_file)
 logger = logging.getLogger(__name__)
 
 
+def build_url(*parts: str, trailing_slash: bool = False) -> str:
+    """Join ``CONF.server_url`` with path ``parts``, preserving the server's
+    path prefix (e.g. ``/fhwa``).
+
+    Unlike :func:`urllib.parse.urljoin`, this never silently drops the base
+    path when it lacks a trailing slash (``.../fhwa`` + ``data`` stays
+    ``.../fhwa/data`` instead of collapsing to ``.../data``). Leading and
+    trailing slashes on ``parts`` are normalized so callers don't have to be
+    careful, and empty parts are ignored.
+    """
+    base = CONF.server_url.rstrip("/")
+    cleaned = [str(p).strip("/") for p in parts if str(p).strip("/")]
+    url = "/".join([base, *cleaned])
+    return url + "/" if trailing_slash else url
+
+
 class PolicyEnum(IntEnum):
     """
     Enum for the types of policies supported by AERO.

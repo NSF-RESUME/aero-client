@@ -2,9 +2,7 @@
 
 import json
 import logging
-import urllib.parse
 import requests
-import urllib
 
 from pathlib import Path
 from typing import Generator
@@ -19,6 +17,7 @@ from aero_client.jobs import download
 from aero_client.jobs import database_commit
 from aero_client.jobs import get_versions
 from aero_client.utils import _client_auth
+from aero_client.utils import build_url
 from aero_client.utils import CONF
 from aero_client.utils import PolicyEnum
 
@@ -41,7 +40,7 @@ def register_function(func: Callable):
 
 def list_versions(data_id: str) -> JSON:
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
-    url = urllib.parse.urljoin(CONF.server_url, f"data/{data_id}/versions")
+    url = build_url("data", data_id, "versions")
     req = session.get(
         url=url,
         headers=headers,
@@ -72,7 +71,7 @@ def list_metadata(
     logger.debug("Retrieving all sources from server")
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
 
-    url = urllib.parse.urljoin(CONF.server_url, metadata_type)
+    url = build_url(metadata_type, trailing_slash=True)
     req = session.get(
         url=url,
         headers=headers,
@@ -110,7 +109,7 @@ def search_sources(query: str) -> list[dict[str, str | int]]:
     params = {"query": query}
     headers = {"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"}
     req = requests.get(
-        f"{CONF.server_url}/data/search", params=params, headers=headers, verify=False
+        build_url("data", "search"), params=params, headers=headers, verify=False
     )
 
     assert req.status_code == 200, str(req.content, encoding="utf-8")
@@ -212,7 +211,7 @@ def register_flow(
         "Content-type": "application/json",
     }
     response = requests.post(
-        f"{CONF.server_url}/flow/register",
+        build_url("flow", "register"),
         headers=headers,
         data=json.dumps(data),
         verify=False,
@@ -239,10 +238,8 @@ def get_flow(flow_id: str, inputs_only: bool = True) -> dict:
         "Content-type": "application/json",
     }
 
-    print(headers)
-
     response = requests.get(
-        f"{CONF.server_url}/flow/{flow_id}",
+        build_url("flow", flow_id),
         headers=headers,
         verify=False,
     )
