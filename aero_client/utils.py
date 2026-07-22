@@ -32,6 +32,7 @@ from aero_client.error import ClientError
 logger = logging.getLogger(__name__)
 
 _CONF_ENV_VAR = "AERO_CONFIG_FILE"  # set to a config.toml path to override the default
+_PROFILE_ENV_VAR = "AERO_PROFILE"  # set to select a profile within config.toml
 
 
 def _load_conf_from_env_or_default():
@@ -39,12 +40,17 @@ def _load_conf_from_env_or_default():
 
     If ``AERO_CONFIG_FILE`` is set, load that config file without touching the
     ``~/.aero`` symlink; otherwise load the standard ``~/.aero/config.toml``.
-    Raises if the selected config cannot be loaded.
+    ``AERO_PROFILE`` selects a named profile within the file (default
+    ``"default"``). Both env vars are resolved once, at import. Raises if the
+    selected config or profile cannot be loaded.
     """
+    profile = os.environ.get(_PROFILE_ENV_VAR, "default")
     override = os.environ.get(_CONF_ENV_VAR)
     if override:
-        return load_conf(str(Path(override).expanduser()), symlink=False)
-    return load_conf(_conf_symlink_path / _conf_fn)
+        return load_conf(
+            str(Path(override).expanduser()), symlink=False, profile=profile
+        )
+    return load_conf(_conf_symlink_path / _conf_fn, profile=profile)
 
 
 try:

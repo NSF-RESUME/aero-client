@@ -13,6 +13,7 @@ from pydantic.dataclasses import dataclass
 
 _conf_symlink_path: Path = Path.home() / ".aero"
 _conf_fn: str = "config.toml"
+_DEFAULT_SERVER: str = "https://aero.emews.org:5001"
 
 logger = logging.getLogger("__name__")
 
@@ -43,25 +44,47 @@ class ClientConf:  # (BaseModel):
             _conf_symlink_path.symlink_to(target=self.aero_dir)
 
 
-def load_conf(conf_file: str, update: bool = False, symlink: bool = True) -> ClientConf:
+def load_conf(
+    conf_file: str,
+    update: bool = False,
+    symlink: bool = True,
+    profile: str = "default",
+) -> ClientConf:
     if update:
         _conf_symlink_path.unlink(missing_ok=True)
 
     with open(conf_file, "rb") as f:
         config = tomllib.load(f)
 
-    conf_kwargs = {}
-
-    conf_kwargs["client_uuid"] = config["client_uuid"]
-    conf_kwargs["portal_client_id"] = config["portal_client_id"]
-
-    if "server" in config["aero"]:
-        conf_kwargs["server_address"] = config["aero"]["server"]
+    # Select the profile section. New format: one top-level table per profile
+    # (e.g. [default], [testing]) holding flat keys. Legacy format: top-level
+    # keys plus an [aero] table, read as the "default" profile.
+    if (
+        profile in config
+        and isinstance(config[profile], dict)
+        and "client_uuid" in config[profile]
+    ):
+        section = config[profile]
+        client_uuid = section["client_uuid"]
+        portal_client_id = section["portal_client_id"]
+        server_address = section.get("server", _DEFAULT_SERVER)
+        cache_dir = section["cache_dir"]
+    elif profile == "default" and "client_uuid" in config:
+        # legacy no-profile format: top-level keys + [aero] table
+        aero = config.get("aero", {})
+        client_uuid = config["client_uuid"]
+        portal_client_id = config["portal_client_id"]
+        server_address = aero.get("server", _DEFAULT_SERVER)
+        cache_dir = aero["cache_dir"]
     else:
-        conf_kwargs["server_address"] = "https://aero.emews.org:5001"
+        raise KeyError(f"Profile '{profile}' not found in {conf_file}")
 
-    conf_kwargs["server_url"] = f"{conf_kwargs['server_address']}"  # /osprey/api/v1.0/"
-    conf_kwargs["aero_dir"] = Path(config["aero"]["cache_dir"]).expanduser().absolute()
+    conf_kwargs = {}
+    conf_kwargs["client_uuid"] = client_uuid
+    conf_kwargs["portal_client_id"] = portal_client_id
+    conf_kwargs["server_address"] = server_address
+    conf_kwargs["server_url"] = f"{server_address}"  # /osprey/api/v1.0/"
+    conf_kwargs["aero_dir"] = Path(cache_dir).expanduser().absolute()
 
     if symlink:
         Path.mkdir(conf_kwargs["aero_dir"], parents=True, exist_ok=True)

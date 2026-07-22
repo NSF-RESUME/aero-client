@@ -52,6 +52,40 @@ portal_client_id = "test"
   server = "http://localhost"   # overridden by the local-server tests
 ```
 
+### Config profiles
+
+`config.toml` may hold several named profiles, each a top-level table with flat
+keys. The `default` profile is used unless `AERO_PROFILE` selects another. This
+makes switching between, say, production and a local test server a one-env-var
+change:
+
+```toml
+[default]
+server = "https://aero.cels.anl.gov/fhwa"
+cache_dir = "~/.local/share/fhwa_aero"
+client_uuid = "..."
+portal_client_id = "..."
+
+[testing]
+server = "http://127.0.0.1:8000"
+cache_dir = "tests/data"
+client_uuid = "..."
+portal_client_id = "..."
+```
+
+```sh
+# uses [default]
+.venv/bin/python -c "from aero_client.utils import CONF; print(CONF.server_url)"
+# uses [testing]
+AERO_PROFILE=testing .venv/bin/python -c "from aero_client.utils import CONF; print(CONF.server_url)"
+```
+
+`AERO_CONFIG_FILE` (which file) and `AERO_PROFILE` (which profile within it)
+compose, and both are resolved **once, at import**. The old no-profile format
+(top-level keys + an `[aero]` table, as shown above) is still accepted and loaded
+as the `default` profile, so existing config files keep working. Select a profile
+in the CLI with `aero configure -f <file> -p <profile>`.
+
 ### Proxies
 
 If your shell sets `HTTP_PROXY` / `HTTPS_PROXY`, the proxy may intercept requests

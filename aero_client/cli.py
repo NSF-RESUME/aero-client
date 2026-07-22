@@ -4,6 +4,7 @@ import argparse
 import dataclasses
 import json
 import logging
+import os
 
 from pprint import pprint
 
@@ -154,6 +155,13 @@ def main():
     config_parser.add_argument(
         "-f", "--file", type=str, default=None, help="Configuration file"
     )
+    config_parser.add_argument(
+        "-p",
+        "--profile",
+        type=str,
+        default=None,
+        help="Profile to load from the config file (defaults to AERO_PROFILE or 'default')",
+    )
 
     args = parser.parse_args()
 
@@ -207,7 +215,10 @@ def main():
         pass
 
     elif args.command == "configure":
-        pprint(dataclasses.asdict(load_conf(args.file, update=True)))
+        profile = args.profile or os.environ.get("AERO_PROFILE", "default")
+        pprint(
+            dataclasses.asdict(load_conf(args.file, update=True, profile=profile))
+        )
 
     elif args.command == "logout":
         from aero_client.api import globus_logout
