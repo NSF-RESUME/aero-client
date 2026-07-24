@@ -74,6 +74,13 @@ def main():
         help="The GCS Guest Collection domain name",
     )
     create_parser.add_argument(
+        "-C",
+        "--collection-uuid",
+        type=str,
+        required=True,
+        help="The GCS Guest Collection UUID to store the pulled file in",
+    )
+    create_parser.add_argument(
         "-g",
         "--endpoint-uuid",
         type=str,
@@ -112,7 +119,7 @@ def main():
         "-e",
         "--email",
         type=str,
-        required=True,
+        default=None,
         help="email address to send notifications to in case of failure",
     )
 
@@ -210,6 +217,25 @@ def main():
             print("Search returned no results")
         else:
             print(json.dumps(res, indent=4))
+
+    elif args.command == "create":
+        from aero_client.api import create_source
+
+        if args.verifier is None:
+            parser.error(
+                "create requires --verifier (Globus Compute function UUID used "
+                "as the ingestion wrapper)"
+            )
+        result = create_source(
+            name=args.name,
+            url=args.url,
+            collection_uuid=args.collection_uuid,
+            collection_url=args.collection_url,
+            endpoint_uuid=args.endpoint_uuid,
+            function_uuid=args.verifier,
+            description=args.description,
+        )
+        print(json.dumps(result, indent=4))
 
     elif args.command == "register":
         pass

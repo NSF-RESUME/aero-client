@@ -180,7 +180,7 @@ def register_flow(
             v["collection_url"] += "/"
 
     if policy is not None:
-        if policy == PolicyEnum.INGESTION:
+        if policy in (PolicyEnum.INGESTION, PolicyEnum.INGESTION_EVENT):
             if pull_function_uuid is None:
                 pull_function_uuid = register_function(download)
             if commit_function_uuid is None:
@@ -219,6 +219,57 @@ def register_flow(
     if response.status_code == 200:
         return response.json()
     raise ClientError(response.status_code, response.content)
+
+
+def create_source(
+    name: str,
+    url: str,
+    collection_uuid: str,
+    collection_url: str,
+    endpoint_uuid: str,
+    function_uuid: str,
+    description: str | None = None,
+    kwargs: JSON = {},
+) -> dict:
+    """Register a data source as an event-driven ingestion flow (no timer).
+
+    The source is (re-)pulled whenever the server receives
+    ``POST /data/{id}/notify`` for it — e.g. driven by an S3 object-changed
+    event. Use an HTTPS-reachable ``url`` (such as an S3 object URL) so the
+    ingestion ``download`` function can fetch it. The pulled file is stored in
+    the given Globus guest collection, so downstream analysis flows read it from
+    there as usual.
+
+    Args:
+        name (str): Name for the source (becomes the output Data record).
+        url (str): HTTPS URL to fetch the source file from.
+        collection_uuid (str): Globus guest collection UUID to store the file in.
+        collection_url (str): Globus guest collection HTTPS domain.
+        endpoint_uuid (str): Globus Compute endpoint to run the ingestion on.
+        function_uuid (str): Registered Globus Compute function used as the
+            ingestion verify/modify wrapper.
+        description (str | None, optional): Description of the source.
+        kwargs (JSON, optional): Extra keyword arguments for the function.
+
+    Returns:
+        dict: The registered flow, including the created source Data ``id`` to
+        reference as ``input_data`` when registering analysis flows.
+    """
+    output_data = {
+        name: {
+            "url": url,
+            "collection_uuid": collection_uuid,
+            "collection_url": collection_url,
+        }
+    }
+    return register_flow(
+        endpoint_uuid=endpoint_uuid,
+        function_uuid=function_uuid,
+        output_data=output_data,
+        kwargs=kwargs,
+        description=description,
+        policy=PolicyEnum.INGESTION_EVENT,
+    )
 
 
 def get_flow(flow_id: str, inputs_only: bool = True) -> dict:

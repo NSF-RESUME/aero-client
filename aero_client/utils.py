@@ -101,6 +101,9 @@ class PolicyEnum(IntEnum):
     ALL = 3
     """..."""
 
+    INGESTION_EVENT = 4
+    """Ingestion flow run on external notification (POST /data/{id}/notify), no timer."""
+
 
 @dataclass
 class AeroOutput:
