@@ -141,12 +141,19 @@ def _client_auth() -> str:
         str: Access token of the authorizer
     """
     client = NativeAppAuthClient(client_id=CONF.client_uuid)
+    auth_token = None
     if _TOKEN_PATH.is_file():
         tokens = load_tokens()
-        auth_token = tokens[CONF.portal_client_id]["refresh_token"]
+        if CONF.portal_client_id in tokens:
+            # Use the stored refresh token to mint a fresh *access* token; never
+            # send the refresh token itself as the API bearer.
+            rta = RefreshTokenAuthorizer(
+                refresh_token=tokens[CONF.portal_client_id]["refresh_token"],
+                auth_client=client,
+            )
+            auth_token = rta.get_authorization_header().split(" ")[-1]
 
-        _ = RefreshTokenAuthorizer(refresh_token=auth_token, auth_client=client)
-    else:
+    if auth_token is None:
         scopes = [
             f"https://auth.globus.org/scopes/{CONF.portal_client_id}/action_all",
             "openid",
@@ -185,7 +192,6 @@ def get_transfer_token(collection_uuid: str) -> str:
     client = NativeAppAuthClient(client_id=CONF.client_uuid)
 
     if collection_uuid in tokens:
-        transfer_token = tokens[collection_uuid]["access_token"]
         ref_transfer_token = tokens[collection_uuid]["refresh_token"]
         rta = RefreshTokenAuthorizer(
             refresh_token=ref_transfer_token, auth_client=client
