@@ -16,8 +16,10 @@ from aero_client.jobs import commit_analysis
 from aero_client.jobs import download
 from aero_client.jobs import database_commit
 from aero_client.jobs import get_versions
+from aero_client.jobs import stage
 from aero_client.utils import _client_auth
 from aero_client.utils import build_url
+from aero_client.utils import register_function as register_aero_function
 from aero_client.utils import CONF
 from aero_client.utils import PolicyEnum
 
@@ -201,7 +203,10 @@ def register_flow(
     data["commit_function_uuid"] = commit_function_uuid
     data["flow_kwargs"] = kwargs
     data["rule"] = policy
-    data["timer"] = timer_delay
+    # Only send timer when set; event-driven/analysis flows have none, and the
+    # server rejects an explicit null (its default applies only when omitted).
+    if timer_delay is not None:
+        data["timer"] = timer_delay
 
     if len(tasks) > 1:
         data["tasks"] = tasks
@@ -227,7 +232,7 @@ def create_source(
     collection_uuid: str,
     collection_url: str,
     endpoint_uuid: str,
-    function_uuid: str,
+    function_uuid: str | None = None,
     description: str | None = None,
     kwargs: JSON = {},
 ) -> dict:
@@ -246,8 +251,10 @@ def create_source(
         collection_uuid (str): Globus guest collection UUID to store the file in.
         collection_url (str): Globus guest collection HTTPS domain.
         endpoint_uuid (str): Globus Compute endpoint to run the ingestion on.
-        function_uuid (str): Registered Globus Compute function used as the
-            ingestion verify/modify wrapper.
+        function_uuid (str | None, optional): Registered Globus Compute function
+            used as the ingestion verify/modify wrapper. If omitted, a
+            raw-passthrough ``stage`` function is registered so the source file
+            is stored unchanged.
         description (str | None, optional): Description of the source.
         kwargs (JSON, optional): Extra keyword arguments for the function.
 
@@ -255,6 +262,11 @@ def create_source(
         dict: The registered flow, including the created source Data ``id`` to
         reference as ``input_data`` when registering analysis flows.
     """
+    if function_uuid is None:
+        # Raw passthrough: register the stager aero_format-wrapped so its output
+        # (the unchanged pulled file) is uploaded to the collection by gcs_save.
+        function_uuid = register_aero_function(stage)
+
     output_data = {
         name: {
             "url": url,

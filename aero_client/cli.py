@@ -53,38 +53,47 @@ def main():
 
     # create_parser arguments
     create_parser.add_argument(
+        "-f",
+        "--file",
+        type=str,
+        default=None,
+        help="YAML file supplying any of the create arguments (name, url, "
+        "collection_url, collection_uuid, endpoint_uuid, verifier, description). "
+        "Explicit CLI flags override values from the file.",
+    )
+    create_parser.add_argument(
         "-n",
         "--name",
         type=str,
-        required=True,
+        required=False,
         help="Name for the source",
     )
     create_parser.add_argument(
         "-u",
         "--url",
         type=str,
-        required=True,
+        required=False,
         help="URL to retrieve the source from",
     )
     create_parser.add_argument(
         "-c",
         "--collection-url",
         type=str,
-        required=True,
+        required=False,
         help="The GCS Guest Collection domain name",
     )
     create_parser.add_argument(
         "-C",
         "--collection-uuid",
         type=str,
-        required=True,
+        required=False,
         help="The GCS Guest Collection UUID to store the pulled file in",
     )
     create_parser.add_argument(
         "-g",
         "--endpoint-uuid",
         type=str,
-        required=True,
+        required=False,
         help="The Globus Compute Endpoint UUID to run ingestion flow on",
     )
     create_parser.add_argument(
@@ -219,23 +228,64 @@ def main():
             print(json.dumps(res, indent=4))
 
     elif args.command == "create":
+        # Optionally load defaults from a YAML file; explicit CLI flags win.
+        cfg = {}
+        if args.file is not None:
+            import yaml
+
+            with open(args.file) as fh:
+                cfg = yaml.safe_load(fh) or {}
+
+        def _pick(key, cli_val):
+            return cli_val if cli_val is not None else cfg.get(key)
+
+        name = _pick("name", args.name)
+        url = _pick("url", args.url)
+        collection_uuid = _pick("collection_uuid", args.collection_uuid)
+        collection_url = _pick("collection_url", args.collection_url)
+        endpoint_uuid = _pick("endpoint_uuid", args.endpoint_uuid)
+        description = _pick("description", args.description)
+        # --verifier optional: when omitted (CLI and file), create_source
+        # registers a raw-passthrough `stage` function (stores the file as-is).
+        function_uuid = _pick("verifier", args.verifier) or cfg.get("function_uuid")
+
+        required = {
+            "name": name,
+            "url": url,
+            "collection_url": collection_url,
+            "collection_uuid": collection_uuid,
+            "endpoint_uuid": endpoint_uuid,
+        }
+        missing = [k for k, v in required.items() if not v]
+        if missing:
+            parser.error(
+                "create is missing required values "
+                f"{missing}; provide them via CLI flags or --file"
+            )
+
         from aero_client.api import create_source
 
-        if args.verifier is None:
-            parser.error(
-                "create requires --verifier (Globus Compute function UUID used "
-                "as the ingestion wrapper)"
-            )
         result = create_source(
-            name=args.name,
-            url=args.url,
-            collection_uuid=args.collection_uuid,
-            collection_url=args.collection_url,
-            endpoint_uuid=args.endpoint_uuid,
-            function_uuid=args.verifier,
-            description=args.description,
+            name=name,
+            url=url,
+            collection_uuid=collection_uuid,
+            collection_url=collection_url,
+            endpoint_uuid=endpoint_uuid,
+            function_uuid=function_uuid,
+            description=description,
         )
         print(json.dumps(result, indent=4))
+
+        try:
+            source_id = result["contributed_to"][0]["id"]
+        except (KeyError, IndexError, TypeError):
+            source_id = None
+        if source_id is not None:
+            print(f"\nSource data id: {source_id}")
+            print("  - trigger an ingestion (notify webhook):")
+            print(f"      POST <server>/data/{source_id}/notify")
+            print("  - reference it as an analysis flow input_data entry:")
+            print(f'      {{"<name>": {{"id": "{source_id}", "version": null}}}}')
 
     elif args.command == "register":
         pass
