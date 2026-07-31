@@ -130,6 +130,12 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
         0
     ]  # assuming only one contribution / ingesting flow for now
 
+    # Prefer a per-run source url passed via the notify webhook (e.g. a MinIO
+    # presigned URL); fall back to the source's registered url.
+    override_url = kwargs["aero"].get("source_url")
+    if override_url:
+        data["url"] = override_url
+
     TEMP_DIR.mkdir(exist_ok=True, parents=True)
     bn = str(uuid.uuid4())
     fn = Path(TEMP_DIR, bn)
@@ -151,6 +157,27 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
     kwargs["aero"]["output_data"][data["name"]]["encoding"] = encoding
 
     return args, kwargs
+
+
+def stage(*args, **kwargs):
+    """Passthrough ingestion function: stage the downloaded file unchanged.
+
+    Returns the file pulled by ``download`` as an ``AeroOutput`` so the
+    ``aero_format`` wrapper's ``gcs_save`` uploads the raw object into the Globus
+    guest collection (no transform). Default ingestion function for
+    raw-passthrough sources.
+    """
+    import os
+
+    from aero_client.utils import AeroOutput
+
+    # aero_format passes the downloaded local path under the source's output
+    # name; a passthrough source has exactly one such file entry.
+    for name, value in kwargs.items():
+        if isinstance(value, str) and os.path.exists(value):
+            return AeroOutput(name=name, path=value)
+
+    raise ValueError("stage: no downloaded file found among inputs")
 
 
 def database_commit(*args, **kwargs) -> dict[str, int | float | str | dict]:
