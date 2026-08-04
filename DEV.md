@@ -86,6 +86,28 @@ compose, and both are resolved **once, at import**. The old no-profile format
 as the `default` profile, so existing config files keep working. Select a profile
 in the CLI with `aero configure -f <file> -p <profile>`.
 
+#### Profiles on a Globus Compute endpoint
+
+The ingestion/analysis jobs (`download`, `stage`, `database_commit`, …) run as
+Globus Compute functions **on the endpoint's workers**, where they import
+`aero_client` and resolve `CONF` at import — using the endpoint's environment,
+not the client that launched the flow. So the endpoint must select the same
+profile the source/flow was registered against, or the workers will talk to the
+wrong `server`/`cache_dir`.
+
+Set `AERO_PROFILE` (and `AERO_CONFIG_FILE` if the config isn't at the default
+path) in the endpoint's `user_environment.yaml` so every worker picks it up:
+
+```yaml
+# ~/.globus_compute/<endpoint-name>/user_environment.yaml
+AERO_PROFILE: fhwa
+# AERO_CONFIG_FILE: /home/aero/.aero/config.toml   # if non-default
+```
+
+Restart the endpoint after editing so workers inherit the change. Because the
+profile is resolved once at import, an endpoint effectively serves a single
+profile at a time — run separate endpoints for separate profiles.
+
 ### Proxies
 
 If your shell sets `HTTP_PROXY` / `HTTPS_PROXY`, the proxy may intercept requests
