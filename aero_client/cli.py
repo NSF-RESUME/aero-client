@@ -135,34 +135,38 @@ def main():
     search_parser.add_argument("query", type=str, help="query to pass to search engine")
 
     register_parser.add_argument(
+        "-f",
+        "--file",
+        type=str,
+        default=None,
+        help="YAML file describing the analysis flow (endpoint_uuid, function_uuid, "
+        "policy, description, input_data, output_data, kwargs). Explicit CLI flags "
+        "override scalar values from the file.",
+    )
+    register_parser.add_argument(
         "-e", "--endpoint-uuid", type=str, help="Globus Compute endpoint uuid"
     )
     register_parser.add_argument(
-        "-f",
+        "-u",
         "--function-uuid",
         type=str,
         help="Globus Compute registered function UUID",
     )
     register_parser.add_argument(
-        "-s",
-        "--sources",
-        metavar="SOURCE_ID=VERSION_ID",
-        nargs="+",
+        "-p",
+        "--policy",
+        type=str,
         default=None,
-        help="Source id and version id of source. Set version id to -1 if latest version is desired.",
+        help="Rerun policy: name (ANY, ALL, TIMER, ...) or int. Defaults to ANY "
+        "(rerun when any input gets a new version).",
     )
-
-    reg_conf_parser = register_parser.add_mutually_exclusive_group(required=False)
-    reg_conf_parser.add_argument(
+    register_parser.add_argument(
         "-k",
         "--kwargs",
         metavar="KEY=VALUE",
         nargs="+",
         default=None,
-        help="Keyword arguments to pass to function",
-    )
-    reg_conf_parser.add_argument(
-        "-c", "--config", type=str, default=None, help="Path to flow configuration file"
+        help="Keyword arguments to pass to function (override/augment file kwargs)",
     )
     register_parser.add_argument(
         "-d", "--description", type=str, default=None, help="Description of task"
@@ -288,7 +292,79 @@ def main():
             print(f'      {{"<name>": {{"id": "{source_id}", "version": null}}}}')
 
     elif args.command == "register":
-        pass
+        from aero_client.api import register_flow
+        from aero_client.utils import PolicyEnum
+
+        # Load the flow definition from YAML; explicit CLI flags override scalars.
+        cfg = {}
+        if args.file is not None:
+            import yaml
+
+            with open(args.file) as fh:
+                cfg = yaml.safe_load(fh) or {}
+
+        def _pick(key, cli_val):
+            return cli_val if cli_val is not None else cfg.get(key)
+
+        endpoint_uuid = _pick("endpoint_uuid", args.endpoint_uuid)
+        function_uuid = _pick("function_uuid", args.function_uuid)
+        description = _pick("description", args.description)
+        input_data = cfg.get("input_data", {})
+        output_data = cfg.get("output_data", {})
+
+        # kwargs: start from the file, then merge in any KEY=VALUE CLI overrides.
+        kwargs = dict(cfg.get("kwargs", {}) or {})
+        if args.kwargs:
+            for pair in args.kwargs:
+                k, _, v = pair.partition("=")
+                kwargs[k] = v
+
+        # Policy: accept an enum name ("ANY") or an int; default to ANY so the
+        # analysis reruns whenever an input gets a new version.
+        policy_val = _pick("policy", args.policy)
+        if policy_val is None:
+            policy = PolicyEnum.ANY
+        elif isinstance(policy_val, int) or str(policy_val).lstrip("-").isdigit():
+            policy = PolicyEnum(int(policy_val))
+        else:
+            try:
+                policy = PolicyEnum[str(policy_val).strip().upper()]
+            except KeyError:
+                parser.error(
+                    f"unknown policy {policy_val!r}; expected one of "
+                    f"{[p.name for p in PolicyEnum]} or an int"
+                )
+
+        required = {
+            "endpoint_uuid": endpoint_uuid,
+            "function_uuid": function_uuid,
+            "input_data": input_data,
+            "output_data": output_data,
+        }
+        missing = [k for k, v in required.items() if not v]
+        if missing:
+            parser.error(
+                f"register is missing required values {missing}; "
+                "provide them via --file or CLI flags"
+            )
+
+        result = register_flow(
+            endpoint_uuid=endpoint_uuid,
+            function_uuid=function_uuid,
+            input_data=input_data,
+            output_data=output_data,
+            kwargs=kwargs,
+            description=description,
+            policy=policy,
+        )
+        print(json.dumps(result, indent=4))
+
+        try:
+            out_id = result["contributed_to"][0]["id"]
+        except (KeyError, IndexError, TypeError):
+            out_id = None
+        if out_id is not None:
+            print(f"\nOutput data id: {out_id}")
 
     elif args.command == "configure":
         profile = args.profile or os.environ.get("AERO_PROFILE", "default")
