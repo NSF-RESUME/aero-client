@@ -56,6 +56,47 @@ def register_ingestion():
 3. Timer delay is specified in *seconds*. This value of `86400` makes the flow run on a daily basis.
 
 
+## Registering Analysis Flows from the CLI
+
+An **analysis flow** consumes one or more existing AERO sources (via `input_data`) and reruns
+automatically when they get a new version. Register one from a YAML file with `aero register -f`:
+
+```yaml title="analysis.yaml"
+endpoint_uuid: <globus compute endpoint uuid>
+function_uuid: <uuid printed when you register your analysis function>
+policy: ANY            # (1)
+description: LHS results CSV summary
+
+input_data:
+  lhs_input:           # (2)
+    id: <source data id>   # printed by `aero create`
+    version: null          # null = latest
+
+output_data:
+  summary:             # (3)
+    collection_uuid: <gcs guest collection uuid>
+    collection_url: <gcs guest collection domain>
+
+kwargs: {}             # extra keyword args passed to the function
+```
+
+1. `ANY` reruns when **any** input gets a new version; `ALL` only when **all** inputs have. Use one
+   of these (not `INGESTION`/`TIMER`) for an analysis meant to react to new data. Defaults to `ANY`.
+2. The `input_data` key must match your analysis function's **parameter name**; `id` is the source
+   Data id.
+3. The `output_data` key must match the `AeroOutput` **name** your function returns.
+
+```sh
+aero register -f analysis.yaml
+```
+
+Scalar values can be overridden on the command line (`-e/--endpoint-uuid`, `-u/--function-uuid`,
+`-p/--policy`, `-d/--description`, `-k/--kwargs KEY=VALUE`); explicit flags win over the file.
+
+> **Note:** with `ANY`/`ALL`, the flow also runs **once at registration** (its `last_executed` starts
+> empty), so the first analysis run happens immediately, before any new source version.
+
+
 ## Flow Output
 
 ```json title="AERO Output" linenums="1"
