@@ -156,6 +156,15 @@ def download(*args, **kwargs) -> tuple[tuple, dict[str, dict]]:
     kwargs["aero"]["output_data"][data["name"]]["download"] = True
     kwargs["aero"]["output_data"][data["name"]]["encoding"] = encoding
 
+    # Carry the notify's per-url identity and dedup flag through to /prov/new, so
+    # a typed source dedups per url on the copy path too. gcs_save's metadata
+    # update doesn't touch these keys.
+    source_key = kwargs["aero"].get("source_key")
+    if source_key:
+        kwargs["aero"]["output_data"][data["name"]]["source_key"] = source_key
+    if kwargs["aero"].get("dedup") is False:
+        kwargs["aero"]["output_data"][data["name"]]["dedup"] = False
+
     return args, kwargs
 
 
@@ -240,9 +249,18 @@ def get_versions(*function_params) -> tuple:
                 )
 
                 assert response.status_code == 200, response.content
-                md["version"] = response.json()["version"]
-                md["file_bn"] = response.json()["data_file"]["file_name"]
-                md["encoding"] = response.json()["data_file"]["encoding"]
+                latest = response.json()
+                md["version"] = latest["version"]
+                md["file_bn"] = latest["data_file"]["file_name"]
+                md["encoding"] = latest["data_file"]["encoding"]
+
+                # A no-copy source keeps no bytes in AERO, so the pull needs the
+                # object's own url. The server resolves it from the version's
+                # object key, which means a run this source did not trigger — a
+                # multi-input analysis, say — can still locate it. Only a
+                # notify-triggered run also carries a signed url.
+                if latest.get("no_copy") and latest.get("trigger_url"):
+                    md.setdefault("trigger_url", latest["trigger_url"])
 
     return function_params
 

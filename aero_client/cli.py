@@ -27,6 +27,9 @@ def main():
         "create", help="Create a source to store in AERO"
     )
     # get_parser = subparsers.add_parser("get", help="Get source table from server")
+    types_parser = subparsers.add_parser(
+        "types", help="List notification source types and their data ids"
+    )
     search_parser = subparsers.add_parser("search", help="Search sources")
     register_parser = subparsers.add_parser("register", help="Register analysis flow")
     config_parser = subparsers.add_parser("configure", help="Configure the client")
@@ -130,6 +133,26 @@ def main():
         type=str,
         default=None,
         help="email address to send notifications to in case of failure",
+    )
+    # No short flag: -t is already --timer on this subcommand.
+    create_parser.add_argument(
+        "--type",
+        type=str,
+        default=None,
+        help="Group this url under a named type. If the type already exists the "
+        "url is added to it and its existing data id is returned, so analysis "
+        "flows registered against that id also run when this object changes.",
+    )
+    create_parser.add_argument(
+        "--no-copy",
+        action="store_true",
+        help="Track changes without copying any data: notify records a version "
+        "from the event metadata and the analysis fetches the object by url. "
+        "No collection, endpoint or function is needed.",
+    )
+
+    types_parser.add_argument(
+        "--json", action="store_true", help="Emit raw JSON instead of a summary"
     )
 
     search_parser.add_argument("query", type=str, help="query to pass to search engine")
@@ -249,25 +272,40 @@ def main():
         collection_url = _pick("collection_url", args.collection_url)
         endpoint_uuid = _pick("endpoint_uuid", args.endpoint_uuid)
         description = _pick("description", args.description)
+        type_name = _pick("type", args.type)
+        no_copy = args.no_copy or bool(cfg.get("no_copy"))
         # --verifier optional: when omitted (CLI and file), create_source
         # registers a raw-passthrough `stage` function (stores the file as-is).
         function_uuid = _pick("verifier", args.verifier) or cfg.get("function_uuid")
 
-        required = {
-            "name": name,
-            "url": url,
-            "collection_url": collection_url,
-            "collection_uuid": collection_uuid,
-            "endpoint_uuid": endpoint_uuid,
-        }
+        from aero_client.api import create_source
+        from aero_client.api import get_source_type
+        from aero_client.api import source_id as _source_id
+
+        # Adding a url to a type that already exists needs nothing else — no
+        # collection, no endpoint, no function. Nor does a no-copy source, which
+        # never pulls anything.
+        adding_to_existing = type_name is not None and get_source_type(type_name)
+
+        if adding_to_existing:
+            required = {"type": type_name, "url": url}
+        elif no_copy:
+            required = {"name": name, "url": url}
+        else:
+            required = {
+                "name": name,
+                "url": url,
+                "collection_url": collection_url,
+                "collection_uuid": collection_uuid,
+                "endpoint_uuid": endpoint_uuid,
+            }
+
         missing = [k for k, v in required.items() if not v]
         if missing:
             parser.error(
                 "create is missing required values "
                 f"{missing}; provide them via CLI flags or --file"
             )
-
-        from aero_client.api import create_source
 
         result = create_source(
             name=name,
@@ -277,19 +315,37 @@ def main():
             endpoint_uuid=endpoint_uuid,
             function_uuid=function_uuid,
             description=description,
+            type_name=type_name,
+            no_copy=no_copy,
         )
         print(json.dumps(result, indent=4))
 
-        try:
-            source_id = result["contributed_to"][0]["id"]
-        except (KeyError, IndexError, TypeError):
-            source_id = None
+        source_id = _source_id(result)
         if source_id is not None:
             print(f"\nSource data id: {source_id}")
+            if adding_to_existing:
+                print(f"  - url added to existing type '{type_name}'")
+                print("  - analysis flows on this id now also run for it")
             print("  - trigger an ingestion (notify webhook):")
             print(f"      POST <server>/data/{source_id}/notify")
             print("  - reference it as an analysis flow input_data entry:")
             print(f'      {{"<name>": {{"id": "{source_id}", "version": null}}}}')
+
+    elif args.command == "types":
+        from aero_client.api import list_source_types
+
+        types = list_source_types()
+        if args.json:
+            print(json.dumps(types, indent=4))
+        elif not types:
+            print("No source types registered.")
+        else:
+            for t in types:
+                flag = " (no-copy)" if t.get("no_copy") else ""
+                print(f"{t['name']}{flag}")
+                print(f"  data id: {t['data_id']}")
+                for u in t.get("urls", []):
+                    print(f"    {u['url']}")
 
     elif args.command == "register":
         from aero_client.api import register_flow

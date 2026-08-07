@@ -226,42 +226,149 @@ def register_flow(
     raise ClientError(response.status_code, response.content)
 
 
+def list_source_types() -> list[dict]:
+    """Every notification type with its Data UUID and registered urls."""
+    response = requests.get(
+        build_url("data", "types"),
+        headers={"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"},
+        verify=False,
+    )
+    if response.status_code == 200:
+        return response.json()
+    raise ClientError(response.status_code, response.content)
+
+
+def get_source_type(name: str) -> dict | None:
+    """One type, or None if it doesn't exist yet."""
+    response = requests.get(
+        build_url("data", "types", name),
+        headers={"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"},
+        verify=False,
+    )
+    if response.status_code == 200:
+        return response.json()
+    if response.status_code == 404:
+        return None
+    raise ClientError(response.status_code, response.content)
+
+
+def add_type_url(name: str, url: str) -> dict:
+    """Associate another url with an existing type.
+
+    The type keeps its Data UUID, so analysis flows already registered against it
+    also fire when this url changes.
+    """
+    response = requests.post(
+        build_url("data", "types", name, "urls"),
+        headers={
+            "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
+            "Content-type": "application/json",
+        },
+        data=json.dumps({"url": url}),
+        verify=False,
+    )
+    if response.status_code == 200:
+        return response.json()
+    raise ClientError(response.status_code, response.content)
+
+
+def create_data_source(
+    name: str,
+    url: str,
+    type_name: str | None = None,
+    no_copy: bool = False,
+    collection_uuid: str | None = None,
+    collection_url: str | None = None,
+    description: str | None = None,
+) -> dict:
+    """Create a source Data record directly, with no flow attached."""
+    body = {
+        "name": name,
+        "url": url,
+        "type": type_name,
+        "no_copy": no_copy,
+        "collection_uuid": collection_uuid,
+        "collection_url": collection_url,
+        "description": description,
+    }
+    response = requests.post(
+        build_url("data", "source"),
+        headers={
+            "Authorization": f"Bearer {AUTH_ACCESS_TOKEN}",
+            "Content-type": "application/json",
+        },
+        data=json.dumps(body),
+        verify=False,
+    )
+    if response.status_code == 200:
+        return response.json()
+    raise ClientError(response.status_code, response.content)
+
+
 def create_source(
     name: str,
     url: str,
-    collection_uuid: str,
-    collection_url: str,
-    endpoint_uuid: str,
+    collection_uuid: str | None = None,
+    collection_url: str | None = None,
+    endpoint_uuid: str | None = None,
     function_uuid: str | None = None,
     description: str | None = None,
     kwargs: JSON = {},
+    type_name: str | None = None,
+    no_copy: bool = False,
 ) -> dict:
-    """Register a data source as an event-driven ingestion flow (no timer).
+    """Register a data source, triggered by ``POST /data/notify``.
 
-    The source is (re-)pulled whenever the server receives
-    ``POST /data/{id}/notify`` for it — e.g. driven by an S3 object-changed
-    event. Use an HTTPS-reachable ``url`` (such as an S3 object URL) so the
-    ingestion ``download`` function can fetch it. The pulled file is stored in
-    the given Globus guest collection, so downstream analysis flows read it from
-    there as usual.
+    Three shapes, depending on ``type_name`` and ``no_copy``:
+
+    * **Existing type** — the url is added to it and the *same* Data UUID comes
+      back. No flow is registered, so analysis flows already pointed at that UUID
+      now also run when this object changes.
+    * **``no_copy``** — a Data record with no flow at all. Notify records a version
+      straight from the event metadata; nothing is pulled and no bytes are stored,
+      and the analysis fetches the object by url.
+    * **Otherwise** — the original behavior: an event-driven ingestion flow (no
+      timer) that pulls the object on notify and stages it into the given Globus
+      guest collection for downstream analyses to read.
 
     Args:
-        name (str): Name for the source (becomes the output Data record).
-        url (str): HTTPS URL to fetch the source file from.
-        collection_uuid (str): Globus guest collection UUID to store the file in.
-        collection_url (str): Globus guest collection HTTPS domain.
-        endpoint_uuid (str): Globus Compute endpoint to run the ingestion on.
-        function_uuid (str | None, optional): Registered Globus Compute function
-            used as the ingestion verify/modify wrapper. If omitted, a
-            raw-passthrough ``stage`` function is registered so the source file
-            is stored unchanged.
+        name (str): Name for the source (becomes the Data record).
+        url (str): HTTPS URL of the object.
+        collection_uuid (str | None): Guest collection UUID to store the file in.
+            Required on the copy path only.
+        collection_url (str | None): Guest collection HTTPS domain. Copy path only.
+        endpoint_uuid (str | None): Globus Compute endpoint to pull on. Copy path
+            only — nothing executes for a no-copy source.
+        function_uuid (str | None, optional): Ingestion verify/modify wrapper. If
+            omitted a raw-passthrough ``stage`` function is registered so the file
+            is stored unchanged. Copy path only.
         description (str | None, optional): Description of the source.
         kwargs (JSON, optional): Extra keyword arguments for the function.
+        type_name (str | None, optional): Group this url under a named type.
+        no_copy (bool, optional): Track changes without copying any data.
 
     Returns:
-        dict: The registered flow, including the created source Data ``id`` to
-        reference as ``input_data`` when registering analysis flows.
+        dict: The created source. ``id`` (or ``data_id`` when adding to an
+        existing type) is the UUID to reference as ``input_data`` when
+        registering analysis flows.
     """
+    if type_name is not None:
+        existing = get_source_type(type_name)
+        if existing is not None:
+            # The type already owns a Data; just point another object at it.
+            return add_type_url(type_name, url)
+
+    if no_copy:
+        return create_data_source(
+            name=name,
+            url=url,
+            type_name=type_name,
+            no_copy=True,
+            collection_uuid=collection_uuid,
+            collection_url=collection_url,
+            description=description,
+        )
+
     if function_uuid is None:
         # Raw passthrough: register the stager aero_format-wrapped so its output
         # (the unchanged pulled file) is uploaded to the collection by gcs_save.
@@ -274,6 +381,9 @@ def create_source(
             "collection_url": collection_url,
         }
     }
+    if type_name is not None:
+        output_data[name]["type"] = type_name
+
     return register_flow(
         endpoint_uuid=endpoint_uuid,
         function_uuid=function_uuid,
@@ -282,6 +392,21 @@ def create_source(
         description=description,
         policy=PolicyEnum.INGESTION_EVENT,
     )
+
+
+def source_id(result: dict) -> str | None:
+    """Pull the source Data UUID out of whatever ``create_source`` returned.
+
+    The three paths return different shapes: a FlowOut with contributed_to, a
+    bare Data, or the type the url was added to.
+    """
+    if not isinstance(result, dict):
+        return None
+    try:
+        return result["contributed_to"][0]["id"]
+    except (KeyError, IndexError, TypeError):
+        pass
+    return result.get("data_id") or result.get("id")
 
 
 def get_flow(flow_id: str, inputs_only: bool = True) -> dict:
