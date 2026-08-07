@@ -181,7 +181,7 @@ def api_fixture(monkeypatch):
     import importlib
     import sys
 
-    import aero_client.utils as utils
+    from aero_client import utils
 
     monkeypatch.setattr(utils, "_client_auth", lambda: "test-token")
     sys.modules.pop("aero_client.api", None)
