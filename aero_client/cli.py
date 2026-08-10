@@ -345,7 +345,14 @@ def main():
                 print(f"{t['name']}{flag}")
                 print(f"  data id: {t['data_id']}")
                 for u in t.get("urls", []):
-                    print(f"    {u['url']}")
+                    # A pattern matches objects that were never registered
+                    # individually, so it reads very differently from an exact url.
+                    kind = (
+                        "pattern"
+                        if any(c in u["object_key"] for c in "*?[")
+                        else "object "
+                    )
+                    print(f"    {kind}  {u['url']}")
 
     elif args.command == "register":
         from aero_client.api import register_flow
