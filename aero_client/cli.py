@@ -163,7 +163,8 @@ def main():
         type=str,
         default=None,
         help="YAML file describing the analysis flow (endpoint_uuid, function_uuid, "
-        "policy, description, input_data, output_data, kwargs). Explicit CLI flags "
+        "policy, description, input_data, output_data, kwargs). output_data may be "
+        "omitted if the analysis stores its own results. Explicit CLI flags "
         "override scalar values from the file.",
     )
     register_parser.add_argument(
@@ -398,11 +399,13 @@ def main():
                     f"{[p.name for p in PolicyEnum]} or an int"
                 )
 
+        # output_data is optional: an analysis that stores its own results (back
+        # to the object store it read from, say) declares none, and AERO records
+        # only that the run happened.
         required = {
             "endpoint_uuid": endpoint_uuid,
             "function_uuid": function_uuid,
             "input_data": input_data,
-            "output_data": output_data,
         }
         missing = [k for k, v in required.items() if not v]
         if missing:
@@ -428,6 +431,12 @@ def main():
             out_id = None
         if out_id is not None:
             print(f"\nOutput data id: {out_id}")
+        elif not output_data:
+            print(
+                "\nNo output_data: this analysis stores its own results, so AERO "
+                "records the run and its inputs but tracks no output version.\n"
+                "Nothing can be registered downstream of it."
+            )
 
     elif args.command == "configure":
         profile = args.profile or os.environ.get("AERO_PROFILE", "default")

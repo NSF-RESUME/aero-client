@@ -422,7 +422,28 @@ def aero_format(fn: callable):
 
         kwargs["aero"] = aero_args
 
-        if isinstance(outputs, list):
+        # A flow may declare no output_data at all: the analysis writes its result
+        # wherever it likes (back to the object store it read from, say) and AERO
+        # records only that the run happened. Such a function returns None.
+        declared = kwargs["aero"].get("output_data") or {}
+        produced = (
+            outputs if isinstance(outputs, list) else ([] if outputs is None else [outputs])
+        )
+
+        if not produced:
+            if declared:
+                raise ValueError(
+                    f"function returned no outputs, but the flow declares "
+                    f"{sorted(declared)}. Return an AeroOutput for each, or drop "
+                    "output_data from the flow if the function stores its own results."
+                )
+        elif not declared:
+            raise ValueError(
+                "function returned an output, but the flow declares no output_data. "
+                "Add an output_data entry for it, or return None if the function "
+                "stores its own results."
+            )
+        elif isinstance(outputs, list):
             for ao in outputs:
                 name = ao.name
 
