@@ -338,6 +338,8 @@ def gcs_save(path: str, collection_url: str, collection_uuid: str) -> dict:
 
 def aero_format(fn: callable):
     """AERO decorator that wraps user analysis function to capture provenance information."""
+    import inspect
+    import os
     import requests
     import urllib
 
@@ -345,6 +347,8 @@ def aero_format(fn: callable):
 
     def wrapper(*args, **kwargs):
         fn_in = {}
+        extra_in = {}
+        tmp_dirs = []
 
         assert "aero" in kwargs.keys()
 
@@ -354,26 +358,65 @@ def aero_format(fn: callable):
                     fn_in[name] = val["file"]
         if "input_data" in kwargs["aero"]:
             for name, val in kwargs["aero"]["input_data"].items():
-                TRANSFER_TOKEN = get_transfer_token(val["collection_uuid"])
-                headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
-
-                resp = requests.get(
-                    urllib.parse.urljoin(
-                        f"{val['collection_url']}/", f"{val['file_bn']}"
-                    ),
-                    headers=headers,
-                )
-
                 if "tmp_dir" not in val:
                     val["tmp_dir"] = "/tmp"
 
-                tmp_path = Path(val["tmp_dir"]) / str(uuid.uuid4())
+                trigger_url = val.get("trigger_url")
+
+                if trigger_url:
+                    # No-copy source: AERO stores no bytes, so fetch the object
+                    # itself. The signed url is the relay's presigned GET when it
+                    # made one; without it (public bucket, or presigning off) the
+                    # plain trigger url has to serve.
+                    fetch_url = val.get("signed_url") or trigger_url
+                    resp = requests.get(fetch_url)
+                    # Unlike the collection fetch below, don't let an error page
+                    # get written to disk and passed off to the user function as
+                    # data — a 403 here usually means an unsigned or expired url.
+                    resp.raise_for_status()
+
+                    # Name the temp file after the *trigger* url, so it keeps the
+                    # object's own name and extension without any signing params.
+                    basename = os.path.basename(
+                        urllib.parse.urlparse(trigger_url).path
+                    )
+                    tmp_dir = Path(val["tmp_dir"]) / str(uuid.uuid4())
+                    tmp_dir.mkdir(parents=True, exist_ok=True)
+                    tmp_dirs.append(tmp_dir)
+                    tmp_path = tmp_dir / (basename or str(uuid.uuid4()))
+
+                    extra_in[f"{name}_url"] = trigger_url
+                    extra_in[f"{name}_signed_url"] = val.get("signed_url")
+                else:
+                    TRANSFER_TOKEN = get_transfer_token(val["collection_uuid"])
+                    headers = {"Authorization": f"Bearer {TRANSFER_TOKEN}"}
+
+                    resp = requests.get(
+                        urllib.parse.urljoin(
+                            f"{val['collection_url']}/", f"{val['file_bn']}"
+                        ),
+                        headers=headers,
+                    )
+
+                    tmp_path = Path(val["tmp_dir"]) / str(uuid.uuid4())
+
                 with open(tmp_path, "wb+") as f:
                     f.write(resp.content)
                 fn_in[name] = str(tmp_path)
 
         aero_args = kwargs.pop("aero")
         fn_in.update(**kwargs)
+
+        # Opt-in: hand the url to functions that ask for it by parameter name, so
+        # existing analysis functions are untouched.
+        if extra_in:
+            try:
+                accepted = set(inspect.signature(fn).parameters)
+            except (TypeError, ValueError):  # builtins/C functions
+                accepted = set()
+            fn_in.update(
+                {k: v for k, v in extra_in.items() if k in accepted}
+            )
 
         outputs = fn(**fn_in)
 
@@ -417,6 +460,14 @@ def aero_format(fn: callable):
                 and Path(v).exists()
             ):
                 Path(v).unlink(missing_ok=True)
+
+        # The url branch gives each input its own dir so the file can keep the
+        # object's real name; take those with it.
+        for d in tmp_dirs:
+            try:
+                d.rmdir()
+            except OSError:  # not empty / already gone
+                pass
 
         return kwargs
 
