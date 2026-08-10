@@ -148,6 +148,9 @@ def register_flow(
             Default is None.
         output_data (dict[str | dict[str, str]], optional): The output data that will be created,
             presented in the format {"name": {"url": <url to fetch the data>}}. Default is None.
+            Omit it entirely for an analysis that stores its own results: the function then returns
+            None, AERO records the run and the input versions it consumed, and no output version is
+            tracked -- so no other flow can be registered downstream of it.
         kwargs (JSON, optional): Keyword arguments to pass to function. Default is None
         config (str, optional): Path to config file. Default is None.
         description (str | None, optional): A description of the Flow. Default is None.
