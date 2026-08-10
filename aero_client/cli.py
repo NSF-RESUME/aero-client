@@ -30,6 +30,10 @@ def main():
     types_parser = subparsers.add_parser(
         "types", help="List notification source types and their data ids"
     )
+    delete_flows_parser = subparsers.add_parser(
+        "delete-flows",
+        help="Delete every flow attached to a data id (ingestion + analyses)",
+    )
     search_parser = subparsers.add_parser("search", help="Search sources")
     register_parser = subparsers.add_parser("register", help="Register analysis flow")
     config_parser = subparsers.add_parser("configure", help="Configure the client")
@@ -152,6 +156,19 @@ def main():
     )
 
     types_parser.add_argument(
+        "--json", action="store_true", help="Emit raw JSON instead of a summary"
+    )
+
+    delete_flows_parser.add_argument(
+        "data_id", type=str, help="Data uuid whose flows should be deleted"
+    )
+    delete_flows_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip the confirmation prompt",
+    )
+    delete_flows_parser.add_argument(
         "--json", action="store_true", help="Emit raw JSON instead of a summary"
     )
 
@@ -354,6 +371,53 @@ def main():
                         else "object "
                     )
                     print(f"    {kind}  {u['url']}")
+
+    elif args.command == "delete-flows":
+        from aero_client.api import delete_data_flows
+        from aero_client.api import get_data_flows
+        from aero_client.utils import PolicyEnum
+
+        def _policy_name(value):
+            try:
+                return PolicyEnum(value).name
+            except ValueError:
+                return str(value)
+
+        attached = get_data_flows(args.data_id)
+        if not attached:
+            print(f"No flows are attached to data {args.data_id}.")
+            return
+
+        if not args.yes:
+            print(f"Flows attached to data {args.data_id}:")
+            for f in attached:
+                desc = f" {f['description']}" if f.get("description") else ""
+                timer = " [has timer]" if f.get("timer_job_id") else ""
+                print(
+                    f"  {f['role']:<10} {f['flow_id']}  "
+                    f"{_policy_name(f['policy']):<16}{desc}{timer}"
+                )
+            print(
+                f"\nDeleting {len(attached)} flow(s) also removes their provenance "
+                "records and cancels any Globus timer driving them.\n"
+                "The data, its versions and any source type are kept."
+            )
+            if input("Proceed? [y/N] ").strip().lower() not in ("y", "yes"):
+                print("Aborted; nothing was deleted.")
+                return
+
+        deleted = delete_data_flows(args.data_id)
+
+        if args.json:
+            print(json.dumps(deleted, indent=4))
+        else:
+            for f in deleted:
+                note = f", timer {f['timer']}" if f.get("timer") else ""
+                print(
+                    f"deleted {f['role']} flow {f['flow_id']} "
+                    f"({f['provenance_deleted']} provenance record(s){note})"
+                )
+            print(f"\n{len(deleted)} flow(s) deleted.")
 
     elif args.command == "register":
         from aero_client.api import register_flow
