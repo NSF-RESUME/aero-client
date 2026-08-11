@@ -229,6 +229,39 @@ def register_flow(
     raise ClientError(response.status_code, response.content)
 
 
+def get_data_flows(data_id: str) -> list[dict]:
+    """The flows attached to a Data: what produces it and what consumes it.
+
+    Each entry is tagged with the role it plays -- "ingestion", "analysis", or
+    "both".
+    """
+    response = requests.get(
+        build_url("data", data_id, "flows"),
+        headers={"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"},
+        verify=False,
+    )
+    if response.status_code == 200:
+        return response.json()
+    raise ClientError(response.status_code, response.content)
+
+
+def delete_data_flows(data_id: str) -> list[dict]:
+    """Delete every flow attached to a Data, and their provenance records.
+
+    The Data, its versions and any source type survive, so flows can be
+    re-registered against the same UUID. Irreversible: it discards which input
+    versions those runs consumed, and cancels any Globus timer driving them.
+    """
+    response = requests.delete(
+        build_url("data", data_id, "flows"),
+        headers={"Authorization": f"Bearer {AUTH_ACCESS_TOKEN}"},
+        verify=False,
+    )
+    if response.status_code == 200:
+        return response.json()
+    raise ClientError(response.status_code, response.content)
+
+
 def list_source_types() -> list[dict]:
     """Every notification type with its Data UUID and registered urls."""
     response = requests.get(
