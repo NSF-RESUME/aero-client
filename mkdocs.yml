@@ -6,7 +6,9 @@ repo_url: https://github.com/NSF-RESUME/aero-client
 nav:
   - Home: index.md
   - Getting Started:
-    - Registering Automated Flows: registering_flows.md
+    - Configuration: configuration.md
+    - Writing Functions: writing-functions.md
+  - CLI Reference: cli.md
   - References: docs/
 
 
