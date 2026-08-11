@@ -5,6 +5,7 @@ import dataclasses
 import json
 import logging
 import os
+import sys
 
 from pprint import pprint
 
@@ -108,7 +109,17 @@ def main():
         "--timer",
         default=None,
         type=int,
-        help="timer (in s) how often to refresh source",
+        help="Seconds between pulls. Implies a timer-driven source, so it "
+        "requires --policy INGESTION. Left unset the server default (86400) "
+        "applies.",
+    )
+    create_parser.add_argument(
+        "-p",
+        "--policy",
+        type=str,
+        default=None,
+        help="How the source is pulled: INGESTION_EVENT (default, on the notify "
+        "webhook) or INGESTION (on a timer).",
     )
     create_parser.add_argument(
         "-d",
@@ -292,6 +303,23 @@ def main():
         description = _pick("description", args.description)
         type_name = _pick("type", args.type)
         no_copy = args.no_copy or bool(cfg.get("no_copy"))
+        timer = _pick("timer", args.timer)
+
+        from aero_client.utils import PolicyEnum
+
+        policy_val = _pick("policy", args.policy)
+        if policy_val is None:
+            policy = PolicyEnum.INGESTION_EVENT
+        elif isinstance(policy_val, int) or str(policy_val).lstrip("-").isdigit():
+            policy = PolicyEnum(int(policy_val))
+        else:
+            try:
+                policy = PolicyEnum[str(policy_val).strip().upper()]
+            except KeyError:
+                parser.error(
+                    f"unknown policy {policy_val!r}; for a source use "
+                    "INGESTION_EVENT (notify-driven) or INGESTION (timer-driven)"
+                )
         # --verifier optional: when omitted (CLI and file), create_source
         # registers a raw-passthrough `stage` function (stores the file as-is).
         function_uuid = _pick("verifier", args.verifier) or cfg.get("function_uuid")
@@ -325,17 +353,29 @@ def main():
                 f"{missing}; provide them via CLI flags or --file"
             )
 
-        result = create_source(
-            name=name,
-            url=url,
-            collection_uuid=collection_uuid,
-            collection_url=collection_url,
-            endpoint_uuid=endpoint_uuid,
-            function_uuid=function_uuid,
-            description=description,
-            type_name=type_name,
-            no_copy=no_copy,
-        )
+        if policy is PolicyEnum.INGESTION and timer is None:
+            print(
+                "No --timer given; the server's default of 86400s (24h) applies.",
+                file=sys.stderr,
+            )
+
+        try:
+            result = create_source(
+                name=name,
+                url=url,
+                collection_uuid=collection_uuid,
+                collection_url=collection_url,
+                endpoint_uuid=endpoint_uuid,
+                function_uuid=function_uuid,
+                description=description,
+                type_name=type_name,
+                no_copy=no_copy,
+                policy=policy,
+                timer_delay=timer,
+            )
+        except ValueError as e:
+            parser.error(str(e))
+
         print(json.dumps(result, indent=4))
 
         source_id = _source_id(result)

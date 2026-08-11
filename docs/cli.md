@@ -83,13 +83,15 @@ Registers a data source. What it does depends on two choices: whether the source
 | `-g, --endpoint-uuid` | Globus Compute endpoint to pull on. *Copy sources only* |
 | `-v, --verifier` | Function uuid to transform the pulled file. *Copy sources only* |
 | `-d, --description` | Description |
+| `-p, --policy` | `INGESTION_EVENT` (default, pulled on notify) or `INGESTION` (pulled on a timer) |
+| `-t, --timer` | Seconds between pulls. Requires `--policy INGESTION` |
 | `--type` | Group this url under a named type |
 | `--no-copy` | Track changes without copying any data |
 
 !!! note "Accepted but not implemented"
 
-    `-t/--timer`, `-m/--modifier` and `-e/--email` are parsed but ignored by this command. Setting
-    them has no effect.
+    `-m/--modifier` and `-e/--email` are parsed but ignored by this command. Setting them has no
+    effect.
 
 !!! note "`-e` means different things"
 
@@ -110,6 +112,25 @@ aero create \
 ```
 
 Omitting `--verifier` stores the file unchanged (AERO registers a passthrough for you).
+
+By default the pull happens when the server receives a notify for the source. To pull on a
+schedule instead, ask for the timer-driven policy:
+
+```sh
+aero create \
+  --name "midwest traffic" \
+  --url https://minio.internal:9000/traffic/LinkTrafficReport.xml.gz \
+  --collection-uuid 94d05b66-bf20-435d-a406-2577096b6cb6 \
+  --collection-url https://g-18d480.a4b6ed.a567.data.globus.org/ \
+  --endpoint-uuid fd0abffb-1e0b-403d-a2ec-2c53c9285df0 \
+  --policy INGESTION \
+  --timer 3600
+```
+
+Omitting `--timer` under `INGESTION` is allowed; the **server's default of 86400s (24h)** applies,
+and the command says so. A timer without `--policy INGESTION` is rejected rather than ignored,
+as is a timer on a `--no-copy` source — that registers no flow at all, so there is nothing to
+schedule.
 
 ### A no-copy source
 
@@ -163,13 +184,29 @@ description: MinIO traffic report objects, tracked by reference
 no_copy: true
 ```
 
+A timer-driven source, which does pull and therefore does need a collection and an endpoint:
+
+```yaml title="timed-source.yaml"
+name: midwest traffic
+url: https://minio.internal:9000/traffic/LinkTrafficReport.xml.gz
+collection_uuid: 94d05b66-bf20-435d-a406-2577096b6cb6
+collection_url: https://g-18d480.a4b6ed.a567.data.globus.org/
+endpoint_uuid: fd0abffb-1e0b-403d-a2ec-2c53c9285df0
+description: Daily traffic pull
+
+policy: INGESTION      # default is INGESTION_EVENT (pulled on notify)
+timer: 86400           # seconds; omit to take the server default of 86400
+# verifier: <fn-uuid>  # optional; omitted stores the file unchanged
+```
+
 ```sh
 aero create -f source.yaml
 aero create -f source.yaml -n "different name"    # flags override the file
+aero create -f timed-source.yaml -t 3600          # ...including the timer
 ```
 
 Accepted keys: `name`, `url`, `collection_uuid`, `collection_url`, `endpoint_uuid`, `description`,
-`verifier` (or `function_uuid`), `type`, `no_copy`.
+`verifier` (or `function_uuid`), `type`, `no_copy`, `policy`, `timer`.
 
 ### Output
 
@@ -238,7 +275,9 @@ Accepted keys: `endpoint_uuid`, `function_uuid`, `description`, `policy`, `input
 | `INGESTION_EVENT` | 4 | Ingestion driven by a notify webhook, no timer |
 | `NONE` | -1 | Never runs on its own |
 
-`aero create` sets the ingestion policies for you; `register` is for `ANY`/`ALL`.
+`register` is for `ANY`/`ALL`. The two ingestion policies belong to
+[`aero create`](#aero-create), which defaults to `INGESTION_EVENT` and takes `--policy INGESTION`
+for a timer.
 
 ### Analyses that store their own results
 

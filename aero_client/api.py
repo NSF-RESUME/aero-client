@@ -352,8 +352,14 @@ def create_source(
     kwargs: JSON = {},
     type_name: str | None = None,
     no_copy: bool = False,
+    policy: PolicyEnum = PolicyEnum.INGESTION_EVENT,
+    timer_delay: int | None = None,
 ) -> dict:
-    """Register a data source, triggered by ``POST /data/notify``.
+    """Register a data source.
+
+    By default the source is pulled when the server receives
+    ``POST /data/notify`` for it. Pass ``policy=PolicyEnum.INGESTION`` with a
+    ``timer_delay`` to pull it on a schedule instead.
 
     Three shapes, depending on ``type_name`` and ``no_copy``:
 
@@ -363,9 +369,9 @@ def create_source(
     * **``no_copy``** — a Data record with no flow at all. Notify records a version
       straight from the event metadata; nothing is pulled and no bytes are stored,
       and the analysis fetches the object by url.
-    * **Otherwise** — the original behavior: an event-driven ingestion flow (no
-      timer) that pulls the object on notify and stages it into the given Globus
-      guest collection for downstream analyses to read.
+    * **Otherwise** — an ingestion flow that pulls the object and stages it into
+      the given Globus guest collection for downstream analyses to read. Driven
+      by the notify webhook, or by a timer when ``policy`` says so.
 
     Args:
         name (str): Name for the source (becomes the Data record).
@@ -382,16 +388,53 @@ def create_source(
         kwargs (JSON, optional): Extra keyword arguments for the function.
         type_name (str | None, optional): Group this url under a named type.
         no_copy (bool, optional): Track changes without copying any data.
+        policy (PolicyEnum, optional): ``INGESTION_EVENT`` (the default) pulls on
+            the notify webhook; ``INGESTION`` pulls on a timer. Anything else is
+            rejected — those are the only two ways a source gets produced.
+        timer_delay (int | None, optional): Seconds between pulls, for
+            ``INGESTION``. Left unset the server's default of 86400 applies.
+            Meaningless for the other paths, which run no flow of their own.
+
+    Raises:
+        ValueError: for a policy that does not produce a source, or a timer on a
+            path that has no timer to set.
 
     Returns:
         dict: The created source. ``id`` (or ``data_id`` when adding to an
         existing type) is the UUID to reference as ``input_data`` when
         registering analysis flows.
     """
+    if policy not in (PolicyEnum.INGESTION, PolicyEnum.INGESTION_EVENT):
+        raise ValueError(
+            f"policy {PolicyEnum(policy).name} does not produce a source. Use "
+            "INGESTION (timer-driven) or INGESTION_EVENT (notify-driven); "
+            "register analysis flows with `aero register` instead."
+        )
+
+    if timer_delay is not None and policy is not PolicyEnum.INGESTION:
+        raise ValueError(
+            "timer_delay only applies to a timer-driven source. Set "
+            "policy=INGESTION, or drop the timer to be driven by notify."
+        )
+
+    if no_copy and (timer_delay is not None or policy is PolicyEnum.INGESTION):
+        raise ValueError(
+            "a no-copy source registers no flow at all, so there is nothing to "
+            "run on a timer. Drop no_copy to have AERO pull the object, or drop "
+            "the timer and let notify record the change."
+        )
+
     if type_name is not None:
         existing = get_source_type(type_name)
         if existing is not None:
-            # The type already owns a Data; just point another object at it.
+            # The type already owns a Data, and with it whatever flow was set up
+            # when it was created; adding a url cannot change that.
+            if timer_delay is not None or policy is PolicyEnum.INGESTION:
+                logger.warning(
+                    "type '%s' already exists; its existing flow is unchanged and "
+                    "the policy/timer given here are not applied",
+                    type_name,
+                )
             return add_type_url(type_name, url)
 
     if no_copy:
@@ -426,7 +469,8 @@ def create_source(
         output_data=output_data,
         kwargs=kwargs,
         description=description,
-        policy=PolicyEnum.INGESTION_EVENT,
+        policy=policy,
+        timer_delay=timer_delay,
     )
 
 
