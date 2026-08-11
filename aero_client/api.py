@@ -374,7 +374,11 @@ def create_source(
       by the notify webhook, or by a timer when ``policy`` says so.
 
     Args:
-        name (str): Name for the source (becomes the Data record).
+        name (str): Name for the source (becomes the Data record). On the copy
+            path with a ``function_uuid``, this is **also the keyword argument
+            the pulled file arrives as**, and must match both that function's
+            parameter name and the ``AeroOutput(name=...)`` it returns. Without a
+            verifier, or for a no-copy source, it is free-form.
         url (str): HTTPS URL of the object.
         collection_uuid (str | None): Guest collection UUID to store the file in.
             Required on the copy path only.
@@ -385,7 +389,8 @@ def create_source(
             omitted a raw-passthrough ``stage`` function is registered so the file
             is stored unchanged. Copy path only.
         description (str | None, optional): Description of the source.
-        kwargs (JSON, optional): Extra keyword arguments for the function.
+        kwargs (JSON, optional): Extra keyword arguments for the verifier
+            function, beyond the pulled file it always receives. Copy path only.
         type_name (str | None, optional): Group this url under a named type.
         no_copy (bool, optional): Track changes without copying any data.
         policy (PolicyEnum, optional): ``INGESTION_EVENT`` (the default) pulls on
@@ -424,15 +429,21 @@ def create_source(
             "the timer and let notify record the change."
         )
 
+    if no_copy and kwargs:
+        raise ValueError(
+            "a no-copy source runs no function, so there is nothing to pass "
+            f"{sorted(kwargs)} to. Drop no_copy, or drop the kwargs."
+        )
+
     if type_name is not None:
         existing = get_source_type(type_name)
         if existing is not None:
             # The type already owns a Data, and with it whatever flow was set up
             # when it was created; adding a url cannot change that.
-            if timer_delay is not None or policy is PolicyEnum.INGESTION:
+            if timer_delay is not None or policy is PolicyEnum.INGESTION or kwargs:
                 logger.warning(
                     "type '%s' already exists; its existing flow is unchanged and "
-                    "the policy/timer given here are not applied",
+                    "the policy/timer/kwargs given here are not applied",
                     type_name,
                 )
             return add_type_url(type_name, url)

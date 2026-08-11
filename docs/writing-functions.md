@@ -141,6 +141,28 @@ def wastewater_ingestion(wastewater):
     return AeroOutput(name="wastewater", path=wastewater)
 ```
 
+!!! warning "The source's `name` is this parameter's name"
+
+    An analysis names its inputs in `input_data`; an ingestion has none, so the **source name**
+    plays that role. All three of these must be the same string:
+
+    - the parameter the pulled file arrives as (`wastewater` above)
+    - the `AeroOutput(name=...)` you return
+    - the `name` given to `aero create`
+
+    Mismatch it and the run fails with
+    `wastewater_ingestion() got an unexpected keyword argument '<the source name>'`. Keep the
+    human-readable label in the source's `description`.
+
+Parameters beyond the file come from the flow's kwargs — `aero create -k bin_freq=5min`, or a
+`kwargs:` block in the YAML. Give them defaults so the function still runs when they are not set:
+
+```python
+def traffic_to_csv(output, bin_freq="1min", db_dsn=None):
+    ...
+    return AeroOutput(name="output", path=csv_path)
+```
+
 Omit `--verifier` and AERO registers a passthrough that stores the file unchanged. **No-copy sources
 have no ingestion function at all** — nothing is pulled, so there is nothing to transform.
 

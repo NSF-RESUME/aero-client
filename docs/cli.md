@@ -76,7 +76,7 @@ Registers a data source. What it does depends on two choices: whether the source
 | Flag | |
 |---|---|
 | `-f, --file` | YAML file supplying any of the below; explicit flags override it |
-| `-n, --name` | Name for the source |
+| `-n, --name` | Name for the source — **and the parameter name your verifier receives**, see below |
 | `-u, --url` | URL of the object, or a glob pattern (quote it) |
 | `-c, --collection-url` | Guest collection domain. *Copy sources only* |
 | `-C, --collection-uuid` | Guest collection UUID. *Copy sources only* |
@@ -85,8 +85,23 @@ Registers a data source. What it does depends on two choices: whether the source
 | `-d, --description` | Description |
 | `-p, --policy` | `INGESTION_EVENT` (default, pulled on notify) or `INGESTION` (pulled on a timer) |
 | `-t, --timer` | Seconds between pulls. Requires `--policy INGESTION` |
+| `-k, --kwargs KEY=VALUE` | Extra arguments for the verifier function. *Copy sources only* |
 | `--type` | Group this url under a named type |
 | `--no-copy` | Track changes without copying any data |
+
+!!! warning "`name` is a Python parameter name when you supply a verifier"
+
+    The pulled file is handed to your verifier as a **keyword argument named after the source**, so
+    with `--verifier` the name must match that function's parameter *and* the
+    `AeroOutput(name=...)` it returns. Given `def traffic_to_csv(output, ...)` returning
+    `AeroOutput(name="output", ...)`, the source must be `name: output` — put the human-readable
+    label in `description`.
+
+    A name like `"Midwest Traffic 5min Pull"` fails at run time with
+    `traffic_to_csv() got an unexpected keyword argument 'Midwest Traffic 5min Pull'`.
+
+    Without a verifier the name is free-form: the passthrough finds the file whatever it is called.
+    So is a `--no-copy` source, which runs no function at all.
 
 !!! note "Accepted but not implemented"
 
@@ -186,27 +201,39 @@ no_copy: true
 
 A timer-driven source, which does pull and therefore does need a collection and an endpoint:
 
+A timer-driven source with a verifier. Note `name` matches the function's parameter, and the
+readable label lives in `description`:
+
 ```yaml title="timed-source.yaml"
-name: midwest traffic
-url: https://minio.internal:9000/traffic/LinkTrafficReport.xml.gz
+# def traffic_to_csv(output, bin_freq="1min", db_dsn=None)
+#     -> AeroOutput(name="output", ...)
+name: output
+url: https://travelmidwest.com/lmiga/LinkTrafficReport.xml.gz
 collection_uuid: 94d05b66-bf20-435d-a406-2577096b6cb6
 collection_url: https://g-18d480.a4b6ed.a567.data.globus.org/
-endpoint_uuid: fd0abffb-1e0b-403d-a2ec-2c53c9285df0
-description: Daily traffic pull
+endpoint_uuid: 83934b52-4072-409f-a90c-1e1f2574ebde
+description: Midwest Traffic 5min Pull
+function_uuid: 443d9008-d1dd-411d-a3d4-2651d172b0b9
 
 policy: INGESTION      # default is INGESTION_EVENT (pulled on notify)
-timer: 86400           # seconds; omit to take the server default of 86400
-# verifier: <fn-uuid>  # optional; omitted stores the file unchanged
+timer: 300             # seconds; omit to take the server default of 86400
+
+kwargs:                # the verifier's other parameters
+  bin_freq: 5min
 ```
 
 ```sh
 aero create -f source.yaml
 aero create -f source.yaml -n "different name"    # flags override the file
 aero create -f timed-source.yaml -t 3600          # ...including the timer
+aero create -f timed-source.yaml -k bin_freq=1min # ...and kwargs, merged over the file
 ```
 
 Accepted keys: `name`, `url`, `collection_uuid`, `collection_url`, `endpoint_uuid`, `description`,
-`verifier` (or `function_uuid`), `type`, `no_copy`, `policy`, `timer`.
+`verifier` (or `function_uuid`), `type`, `no_copy`, `policy`, `timer`, `kwargs`.
+
+Values given as `-k KEY=VALUE` arrive as **strings**; use the YAML `kwargs` block when a
+parameter needs a number or a boolean.
 
 ### Output
 
