@@ -1,0 +1,392 @@
+# CLI reference
+
+```
+aero [-l LEVEL] <command> [options]
+```
+
+`-l/--log` sets the log level (`DEBUG`, `INFO`, …) and goes **before** the command.
+
+| Command | |
+|---|---|
+| [`configure`](#aero-configure) | Point the client at a server and apply a config profile |
+| [`list`](#aero-list) | List sources, flows, provenance, or one source's versions |
+| [`create`](#aero-create) | Register a data source |
+| [`register`](#aero-register) | Register an analysis flow |
+| [`types`](#aero-types) | List notification types and their data ids |
+| [`delete-flows`](#aero-delete-flows) | Delete the flows attached to a source |
+| [`search`](#aero-search) | Query the Globus Search index |
+| [`logout`](#aero-logout) | Clear cached Globus tokens |
+
+---
+
+## `aero configure`
+
+Apply a `config.toml` and print the resolved settings. See [Configuration](configuration.md).
+
+```sh
+aero configure -f config.toml
+aero configure -f config.toml -p testing
+```
+
+| Flag | |
+|---|---|
+| `-f, --file` | Path to the config file |
+| `-p, --profile` | Profile to read. Defaults to `$AERO_PROFILE`, then `default` |
+
+---
+
+## `aero list`
+
+```sh
+aero list                    # sources (default)
+aero list -t flow            # registered flows
+aero list -t prov            # provenance records
+aero list -i <data-id>       # every version of one source
+```
+
+`-t/--type` and `-i/--id` are mutually exclusive. Output is JSON, paged — press Enter for the next
+page, Ctrl-D to stop.
+
+Listing versions of a source is how you check that an ingestion actually produced something:
+
+```sh
+aero list -i 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266
+```
+
+```json
+[
+    {
+        "id": "4af0e417-0527-43c8-99e7-22cfd88ef951",
+        "checksum": "e55c21331b43487d86e269e47edcf3a3",
+        "source_key": "test-bucket/test-data/lhs_results.csv",
+        "data_id": "6f76e7b5-0f1d-4b4d-9769-e8b85dca5266",
+        "version": 1,
+        "created_at": "2026-08-07T20:55:42.766024"
+    }
+]
+```
+
+---
+
+## `aero create`
+
+Registers a data source. What it does depends on two choices: whether the source is **copy** or
+**no-copy**, and whether it belongs to a **type**.
+
+| Flag | |
+|---|---|
+| `-f, --file` | YAML file supplying any of the below; explicit flags override it |
+| `-n, --name` | Name for the source |
+| `-u, --url` | URL of the object, or a glob pattern (quote it) |
+| `-c, --collection-url` | Guest collection domain. *Copy sources only* |
+| `-C, --collection-uuid` | Guest collection UUID. *Copy sources only* |
+| `-g, --endpoint-uuid` | Globus Compute endpoint to pull on. *Copy sources only* |
+| `-v, --verifier` | Function uuid to transform the pulled file. *Copy sources only* |
+| `-d, --description` | Description |
+| `-p, --policy` | `INGESTION_EVENT` (default, pulled on notify) or `INGESTION` (pulled on a timer) |
+| `-t, --timer` | Seconds between pulls. Requires `--policy INGESTION` |
+| `--type` | Group this url under a named type |
+| `--no-copy` | Track changes without copying any data |
+
+!!! note "Accepted but not implemented"
+
+    `-m/--modifier` and `-e/--email` are parsed but ignored by this command. Setting them has no
+    effect.
+
+!!! note "`-e` means different things"
+
+    On `create`, the endpoint flag is **`-g`** (`-e` is the unused email). On
+    [`register`](#aero-register) it is **`-e`**.
+
+### A copy source
+
+Pulled on notify and staged into a guest collection. Needs a collection and an endpoint:
+
+```sh
+aero create \
+  --name "midwest traffic" \
+  --url https://minio.internal:9000/traffic/LinkTrafficReport.xml.gz \
+  --collection-uuid 94d05b66-bf20-435d-a406-2577096b6cb6 \
+  --collection-url https://g-18d480.a4b6ed.a567.data.globus.org/ \
+  --endpoint-uuid fd0abffb-1e0b-403d-a2ec-2c53c9285df0
+```
+
+Omitting `--verifier` stores the file unchanged (AERO registers a passthrough for you).
+
+By default the pull happens when the server receives a notify for the source. To pull on a
+schedule instead, ask for the timer-driven policy:
+
+```sh
+aero create \
+  --name "midwest traffic" \
+  --url https://minio.internal:9000/traffic/LinkTrafficReport.xml.gz \
+  --collection-uuid 94d05b66-bf20-435d-a406-2577096b6cb6 \
+  --collection-url https://g-18d480.a4b6ed.a567.data.globus.org/ \
+  --endpoint-uuid fd0abffb-1e0b-403d-a2ec-2c53c9285df0 \
+  --policy INGESTION \
+  --timer 3600
+```
+
+Omitting `--timer` under `INGESTION` is allowed; the **server's default of 86400s (24h)** applies,
+and the command says so. A timer without `--policy INGESTION` is rejected rather than ignored,
+as is a timer on a `--no-copy` source — that registers no flow at all, so there is nothing to
+schedule.
+
+### A no-copy source
+
+Records versions from the change event; nothing is pulled and nothing is stored. Needs neither a
+collection nor an endpoint:
+
+```sh
+aero create --name "traffic reports" --type traffic --no-copy \
+  --url http://minio.internal:9000/traffic/a.xml.gz
+```
+
+### Adding more objects to a type
+
+A type binds several objects to **one** data id, so a change to any of them drives the same
+analysis. Register the type once, then add urls — only `--type` and `--url` matter, and the same
+data id comes back:
+
+```sh
+aero create --type traffic --url http://minio.internal:9000/traffic/b.xml.gz
+aero create --type traffic --url http://minio.internal:9000/traffic/c.xml.gz
+```
+
+### Matching objects with a glob
+
+Instead of listing objects, match them — including ones created later:
+
+```sh
+# quote it, or the shell expands the pattern before aero sees it
+aero create --type traffic --no-copy \
+  --url 'http://minio.internal:9000/traffic/**/*.xml.gz'
+```
+
+`*` matches within one path segment, `**` crosses segments, `?` is a single character. So
+`traffic/*/x.gz` is exactly one level deep while `traffic/**/x.gz` is any depth.
+
+An exact url always beats a pattern, and among patterns the one with the longest literal prefix
+wins — a broad rule plus a narrow exception both work. Each version records the **concrete** object
+that changed, so change detection stays per object.
+
+### From a YAML file
+
+```yaml title="source.yaml"
+name: traffic reports
+type: traffic
+url: http://minio.internal:9000/traffic/a.xml.gz
+description: MinIO traffic report objects, tracked by reference
+
+# Track changes without copying. Drop this for the usual copy-to-collection
+# behavior, which additionally needs collection_uuid, collection_url and
+# endpoint_uuid.
+no_copy: true
+```
+
+A timer-driven source, which does pull and therefore does need a collection and an endpoint:
+
+```yaml title="timed-source.yaml"
+name: midwest traffic
+url: https://minio.internal:9000/traffic/LinkTrafficReport.xml.gz
+collection_uuid: 94d05b66-bf20-435d-a406-2577096b6cb6
+collection_url: https://g-18d480.a4b6ed.a567.data.globus.org/
+endpoint_uuid: fd0abffb-1e0b-403d-a2ec-2c53c9285df0
+description: Daily traffic pull
+
+policy: INGESTION      # default is INGESTION_EVENT (pulled on notify)
+timer: 86400           # seconds; omit to take the server default of 86400
+# verifier: <fn-uuid>  # optional; omitted stores the file unchanged
+```
+
+```sh
+aero create -f source.yaml
+aero create -f source.yaml -n "different name"    # flags override the file
+aero create -f timed-source.yaml -t 3600          # ...including the timer
+```
+
+Accepted keys: `name`, `url`, `collection_uuid`, `collection_url`, `endpoint_uuid`, `description`,
+`verifier` (or `function_uuid`), `type`, `no_copy`, `policy`, `timer`.
+
+### Output
+
+Every path prints the **source data id** — the UUID to use as an analysis `input_data` id:
+
+```
+Source data id: 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266
+  - trigger an ingestion (notify webhook):
+      POST <server>/data/6f76e7b5-.../notify
+  - reference it as an analysis flow input_data entry:
+      {"<name>": {"id": "6f76e7b5-...", "version": null}}
+```
+
+---
+
+## `aero register`
+
+Registers an analysis flow: it consumes one or more sources and reruns when they change.
+
+| Flag | |
+|---|---|
+| `-f, --file` | YAML file describing the flow |
+| `-e, --endpoint-uuid` | Globus Compute endpoint to run on |
+| `-u, --function-uuid` | Registered analysis function uuid |
+| `-p, --policy` | Rerun policy, by name or int. Defaults to `ANY` |
+| `-k, --kwargs KEY=VALUE` | Extra keyword arguments; merged over the file's `kwargs` |
+| `-d, --description` | Description |
+
+`input_data` and `output_data` are structured, so they can only come from a file.
+
+```yaml title="analysis.yaml"
+endpoint_uuid: fd0abffb-1e0b-403d-a2ec-2c53c9285df0
+function_uuid: cbaad5b0-01e4-47d7-ba87-2e5633ed0428
+policy: ANY                    # rerun when any input gets a new version
+description: LHS results CSV summary
+
+input_data:
+  lhs_input:                   # must match your function's parameter name
+    id: 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266   # the data id from `aero create`
+    version: null              # null = always the latest
+
+output_data:
+  summary:                     # must match AeroOutput(name="summary")
+    collection_uuid: 94d05b66-bf20-435d-a406-2577096b6cb6
+    collection_url: https://g-18d480.a4b6ed.a567.data.globus.org/
+
+kwargs: {}                     # extra keyword args for the function
+```
+
+```sh
+aero register -f analysis.yaml
+aero register -f analysis.yaml -p ALL -k threshold=0.5
+```
+
+Accepted keys: `endpoint_uuid`, `function_uuid`, `description`, `policy`, `input_data`,
+`output_data`, `kwargs`.
+
+### Policies
+
+| Name | Value | |
+|---|---|---|
+| `ANY` | 2 | Rerun when **any** input has a new version. The usual choice |
+| `ALL` | 3 | Rerun only when **all** inputs have a version newer than the last run |
+| `TIMER` | 1 | Run on a schedule |
+| `INGESTION` | 0 | This flow *is* a timer-driven ingestion |
+| `INGESTION_EVENT` | 4 | Ingestion driven by a notify webhook, no timer |
+| `NONE` | -1 | Never runs on its own |
+
+`register` is for `ANY`/`ALL`. The two ingestion policies belong to
+[`aero create`](#aero-create), which defaults to `INGESTION_EVENT` and takes `--policy INGESTION`
+for a timer.
+
+### Analyses that store their own results
+
+`output_data` is optional. Omit it when the analysis writes its result itself — back into the object
+store it read from, say. The function then returns `None`, AERO records the run and the input
+versions it consumed, and no output version is tracked:
+
+```yaml title="terminal-analysis.yaml"
+endpoint_uuid: fd0abffb-1e0b-403d-a2ec-2c53c9285df0
+function_uuid: 229c5fe3-49dd-465e-8eb3-ba70d7351e3e
+policy: ANY
+description: summarize and write back to MinIO
+
+input_data:
+  lhs_input:
+    id: 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266
+    version: null
+
+# no output_data
+```
+
+The trade-off: with no output there is nothing for another flow to depend on, so **nothing can be
+registered downstream of it**.
+
+### When the first run happens
+
+With `ANY`/`ALL` the flow normally runs **once at registration**, before any new source version.
+
+The exception is an input that is a **no-copy** source: that registration run is skipped, because
+outside of a notify there is no signed URL with which to read the object. The first run is then the
+first notify. A freshly registered flow showing `last_executed: null` and no run is expected in
+that case, not a failure.
+
+### Already exists?
+
+Registration deduplicates on a hash of the function, inputs, outputs and kwargs. Re-registering an
+identical flow returns `501 Flow already exists`. Change something, or remove the old one with
+[`delete-flows`](#aero-delete-flows).
+
+---
+
+## `aero types`
+
+Lists notification types with their data id and registered objects.
+
+```sh
+aero types
+aero types --json
+```
+
+```
+traffic (no-copy)
+  data id: 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266
+    object   http://minio.internal:9000/traffic/a.xml.gz
+    pattern  http://minio.internal:9000/traffic/**/*.xml.gz
+```
+
+The data id shown here is what an analysis `input_data` entry should reference.
+
+---
+
+## `aero delete-flows`
+
+Deletes every flow attached to a data id — the ingestion flow that produces it and the analyses
+that consume it — so they can be re-registered.
+
+```sh
+aero delete-flows 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266
+aero delete-flows 6f76e7b5-... -y        # skip the prompt
+aero delete-flows 6f76e7b5-... --json
+```
+
+It lists what it found and asks first:
+
+```
+Flows attached to data 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266:
+  ingestion  d725132c-ad2c-4adc-9081-cbd9d77fb6a0  INGESTION_EVENT
+  analysis   f9aaedb0-2f23-42e3-bb69-0bc4dce4d7b2  ANY               LHS results CSV summary
+
+Deleting 2 flow(s) also removes their provenance records and cancels any Globus timer driving them.
+The data, its versions and any source type are kept.
+Proceed? [y/N]
+```
+
+**This is irreversible.** It discards the provenance of those runs — which input versions each
+consumed — and cancels their Globus timers. The source itself, its versions and any type survive,
+so flows can be registered against the same data id afterwards.
+
+It follows one level only: an analysis consuming this source produces its own output data, and
+flows consuming *that* are left alone.
+
+---
+
+## `aero search`
+
+Queries the server's Globus Search index.
+
+```sh
+aero search "traffic"
+```
+
+Returns nothing useful if the server runs with Globus Search disabled.
+
+---
+
+## `aero logout`
+
+Clears the cached Globus tokens. The next command will prompt for login again.
+
+```sh
+aero logout
+```
