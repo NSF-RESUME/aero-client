@@ -122,6 +122,15 @@ def main():
         "webhook) or INGESTION (on a timer).",
     )
     create_parser.add_argument(
+        "-k",
+        "--kwargs",
+        metavar="KEY=VALUE",
+        nargs="+",
+        default=None,
+        help="Extra keyword arguments for the verifier function "
+        "(override/augment file kwargs). Values are passed as strings.",
+    )
+    create_parser.add_argument(
         "-d",
         "--description",
         default=None,
@@ -305,6 +314,13 @@ def main():
         no_copy = args.no_copy or bool(cfg.get("no_copy"))
         timer = _pick("timer", args.timer)
 
+        # kwargs: start from the file, then merge in any KEY=VALUE overrides.
+        fn_kwargs = dict(cfg.get("kwargs", {}) or {})
+        if args.kwargs:
+            for pair in args.kwargs:
+                k, _, v = pair.partition("=")
+                fn_kwargs[k] = v
+
         from aero_client.utils import PolicyEnum
 
         policy_val = _pick("policy", args.policy)
@@ -372,6 +388,7 @@ def main():
                 no_copy=no_copy,
                 policy=policy,
                 timer_delay=timer,
+                kwargs=fn_kwargs,
             )
         except ValueError as e:
             parser.error(str(e))

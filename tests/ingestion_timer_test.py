@@ -262,3 +262,63 @@ def test_cli_surfaces_a_rejected_combination_as_a_usage_error(api, monkeypatch):
 
     with pytest.raises(SystemExit):
         cli_module.main()
+
+
+# --------------------------------------------------------------------------
+# kwargs for the verifier function
+# --------------------------------------------------------------------------
+
+
+def test_kwargs_reach_the_flow(api, registered):
+    api.create_source(
+        name="output",
+        url=URL,
+        endpoint_uuid="e",
+        function_uuid="fn",
+        kwargs={"bin_freq": "5min"},
+        **COLLECTION,
+    )
+
+    assert registered[0]["kwargs"] == {"bin_freq": "5min"}
+
+
+def test_kwargs_on_a_no_copy_source_are_rejected(api, registered):
+    """No function runs, so there is nothing to pass them to."""
+    with pytest.raises(ValueError) as exc:
+        api.create_source(
+            name="output", url=URL, no_copy=True, kwargs={"bin_freq": "5min"}
+        )
+
+    assert "bin_freq" in str(exc.value)
+    assert registered == []
+
+
+def test_cli_passes_kwargs(cli):
+    calls = cli([*_base_argv(), "-k", "bin_freq=5min", "foo=7"])
+
+    assert calls[0]["kwargs"] == {"bin_freq": "5min", "foo": "7"}
+
+
+def test_cli_kwargs_merge_over_the_yaml(cli, tmp_path):
+    cfg = tmp_path / "source.yaml"
+    cfg.write_text(
+        "name: output\n"
+        f"url: {URL}\n"
+        f"collection_uuid: {COLLECTION['collection_uuid']}\n"
+        f"collection_url: {COLLECTION['collection_url']}\n"
+        "endpoint_uuid: endpoint-uuid\n"
+        "kwargs:\n"
+        "  bin_freq: 1min\n"
+        "  db_dsn: postgres://x\n"
+    )
+
+    calls = cli(["create", "-f", str(cfg), "-k", "bin_freq=5min"])
+
+    # the flag overrides that one key; the rest of the file survives
+    assert calls[0]["kwargs"] == {"bin_freq": "5min", "db_dsn": "postgres://x"}
+
+
+def test_no_kwargs_is_an_empty_dict(cli):
+    calls = cli(_base_argv())
+
+    assert calls[0]["kwargs"] == {}
