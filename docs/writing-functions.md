@@ -11,11 +11,52 @@ helper must live *inside* the function body. A module-level import that happens 
 machine will not be there on the worker.
 
 **Parameter names are the contract.** Each key in the flow's `input_data` is passed as a keyword
-argument of that name, holding the path of a local file. Each `AeroOutput` name you return must
-match a key in `output_data`.
+argument of that name, holding the path of a local file — see
+[How an input reaches your function](#how-an-input-reaches-your-function). Each `AeroOutput` name
+you return must match a key in `output_data`.
 
 **Register from a matching Python version.** Serialization is version-sensitive: register from the
 same Python minor version the endpoint runs, or it will fail to deserialize the function.
+
+## How an input reaches your function
+
+Every `input_data` key becomes a keyword argument of that name, and its value is **always a local
+filesystem path** — never a source id and never a URL. Given:
+
+```yaml
+input_data:
+  lhs_input:  {id: 9526394f-..., version: null}
+  wind_input: {id: a1b2c3d4-..., version: null}
+kwargs:
+  threshold: 0.5
+```
+
+AERO calls `csv_summary(lhs_input="/tmp/…", wind_input="/tmp/…", threshold=0.5)`. The flow's
+`kwargs` are merged in as further keyword arguments, so your signature covers both.
+
+A key with no matching parameter fails at run time with
+`csv_summary() got an unexpected keyword argument '<key>'`.
+
+### Copy and no-copy sources look the same to you
+
+Where the bytes come from differs; what you receive does not.
+
+| Source | AERO fetches from | your argument holds |
+|---|---|---|
+| copy | the Globus guest collection, with a transfer token | `/tmp/<uuid>` |
+| **no-copy** | the object's own URL — signed when the relay supplied one | `/tmp/<uuid>/lhs_results.csv` |
+
+**"No copy" means AERO keeps no durable copy, not that you get a URL.** The worker still downloads
+the object for the duration of the run and deletes the temp file afterwards. So the same function
+body works against either kind of source, and a source can switch between them without touching
+your code.
+
+One difference is visible: the no-copy path **preserves the object's filename and extension**,
+because the temp file is named from the object's url. The copy path gives an extension-less uuid.
+That matters if your code sniffs the suffix — `.xml.gz` handling, say.
+
+If the fetch fails — most often a 403 from an unsigned or expired url — the run raises rather than
+writing the error page to the temp file and handing it to you as data.
 
 ## An analysis function
 
@@ -75,9 +116,10 @@ error naming the mismatch, rather than a silent no-op.
 
 ## Knowing which object triggered the run
 
-A type can own many objects, and the local path AERO hands you is a temporary name. To find out
-which object this run is about, declare an extra parameter named after the input with a `_url`
-suffix. It is passed only if you ask for it, so existing functions are unaffected:
+A type can own many objects, and the path you get is a temporary one. To find out *which* object
+this run is about, declare an extra parameter named after the input with a `_url` suffix. It is
+passed only if you ask for it — the signature is inspected first — so existing functions are
+unaffected:
 
 ```python
 def analyse(lhs_input, lhs_input_url):
