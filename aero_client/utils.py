@@ -348,6 +348,7 @@ def aero_format(fn: callable):
     def wrapper(*args, **kwargs):
         fn_in = {}
         extra_in = {}
+        direct_in = {}
         tmp_dirs = []
 
         assert "aero" in kwargs.keys()
@@ -362,6 +363,32 @@ def aero_format(fn: callable):
                     val["tmp_dir"] = "/tmp"
 
                 trigger_url = val.get("trigger_url")
+
+                if val.get("fetch") is False:
+                    # The function retrieves this input itself, with credentials
+                    # AERO does not have. Only the input whose notify triggered
+                    # the run gets a signed url, so on a private bucket every
+                    # other one would 403 here.
+                    url = trigger_url
+                    if not url and val.get("collection_url") and val.get("file_bn"):
+                        url = urllib.parse.urljoin(
+                            f"{val['collection_url']}/", f"{val['file_bn']}"
+                        )
+                    if not url:
+                        raise ValueError(
+                            f"input '{name}' is marked fetch: false but has no url "
+                            "to hand over. A no-copy source resolves one from its "
+                            "latest version; check that it has one."
+                        )
+
+                    # The url replaces the path this input would have arrived as,
+                    # so it is passed unconditionally: a mistyped parameter has to
+                    # fail rather than silently drop the input. The signature
+                    # stays opt-in like the extras below -- it is supplementary,
+                    # and is None for every input that did not trigger the run.
+                    direct_in[f"{name}_url"] = url
+                    extra_in[f"{name}_signed_url"] = val.get("signed_url")
+                    continue
 
                 if trigger_url:
                     # No-copy source: AERO stores no bytes, so fetch the object
@@ -406,6 +433,10 @@ def aero_format(fn: callable):
 
         aero_args = kwargs.pop("aero")
         fn_in.update(**kwargs)
+
+        # Inputs the function fetches itself: the url replaces the path it would
+        # otherwise have received, so it is not optional.
+        fn_in.update(direct_in)
 
         # Opt-in: hand the url to functions that ask for it by parameter name, so
         # existing analysis functions are untouched.

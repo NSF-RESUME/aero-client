@@ -58,6 +58,27 @@ That matters if your code sniffs the suffix — `.xml.gz` handling, say.
 If the fetch fails — most often a 403 from an unsigned or expired url — the run raises rather than
 writing the error page to the temp file and handing it to you as data.
 
+### Fetching an input yourself
+
+Only the input whose notify triggered a run carries a signed url, so on a private bucket any other
+no-copy input is fetched unsigned and 403s. AERO cannot sign — it holds no object-store
+credentials. Mark that input `fetch: false` in the flow YAML and it hands over the url instead:
+
+```python
+def run(a_input_url, b_input, a_input_signed_url=None):
+    # a_input_url  -> url of the object; fetch it with your own credentials
+    # b_input      -> local path, fetched by AERO as usual
+    import boto3
+    ...
+```
+
+The opted-out input arrives as `<name>_url` and **`<name>` is not passed at all**, so a signature
+still expecting a path fails immediately. `<name>_signed_url` comes too if you name it, and is
+`None` whenever that input did not trigger the run — give it a default, or the function breaks
+depending on which source happened to fire.
+
+The input's version is still resolved and recorded in provenance; only the download is skipped.
+
 ## An analysis function
 
 ```python title="csv_summary.py"
