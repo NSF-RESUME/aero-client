@@ -274,6 +274,7 @@ input_data:
   lhs_input:                   # must match your function's parameter name
     id: 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266   # the data id from `aero create`
     version: null              # null = always the latest
+    # fetch: false             # optional; see "Fetching an input yourself" below
 
 output_data:
   summary:                     # must match AeroOutput(name="summary")
@@ -290,6 +291,10 @@ aero register -f analysis.yaml -p ALL -k threshold=0.5
 
 Accepted keys: `endpoint_uuid`, `function_uuid`, `description`, `policy`, `input_data`,
 `output_data`, `kwargs`.
+
+Each **`input_data` entry** accepts `id` (required), `version`, and
+[`fetch`](#fetching-an-input-yourself). Each **`output_data` entry** accepts `collection_uuid` and
+`collection_url`.
 
 ### Fetching an input yourself
 
