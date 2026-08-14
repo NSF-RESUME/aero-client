@@ -291,6 +291,43 @@ aero register -f analysis.yaml -p ALL -k threshold=0.5
 Accepted keys: `endpoint_uuid`, `function_uuid`, `description`, `policy`, `input_data`,
 `output_data`, `kwargs`.
 
+### Fetching an input yourself
+
+AERO downloads each input and hands your function a local path. For a **no-copy** input it fetches
+the object's own url, signed when the relay supplied a signature — but only the input whose notify
+triggered the run gets one. On a **private bucket** every other no-copy input is therefore fetched
+unsigned and returns `403 Forbidden`. With two no-copy inputs that is one of them on every run.
+
+AERO cannot sign; it holds no object-store credentials by design. Mark such an input `fetch: false`
+and it hands over the url instead, downloading nothing:
+
+```yaml
+input_data:
+  a_input:
+    id: <data id>
+    version: null
+    fetch: false     # AERO passes the url; your function retrieves it
+  b_input:
+    id: <data id>
+    version: null    # fetched as usual, arrives as a path
+```
+
+```python
+def run(a_input_url, b_input, a_input_signed_url=None):
+    ...
+```
+
+An opted-out input arrives as **`<name>_url`**, and `<name>` is not passed at all — so a function
+still expecting a path fails immediately rather than silently receiving nothing.
+`<name>_signed_url` is passed too if your signature names it, and is `None` for any input that did
+not trigger this run.
+
+Mark every input `fetch: false` and AERO downloads nothing at all. Provenance is unaffected either
+way: the input's version is still resolved and recorded.
+
+`fetch: false` on a **copy** input yields the collection url, which still needs a Globus transfer
+token to read — so this is really for no-copy inputs.
+
 ### Policies
 
 | Name | Value | |
