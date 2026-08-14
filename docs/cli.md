@@ -329,14 +329,28 @@ input_data:
 The trade-off: with no output there is nothing for another flow to depend on, so **nothing can be
 registered downstream of it**.
 
-### When the first run happens
+### When a flow runs
 
-With `ANY`/`ALL` the flow normally runs **once at registration**, before any new source version.
+Two conditions, and they are independent.
 
-The exception is an input that is a **no-copy** source: that registration run is skipped, because
-outside of a notify there is no signed URL with which to read the object. The first run is then the
-first notify. A freshly registered flow showing `last_executed: null` and no run is expected in
-that case, not a failure.
+**Every input must have at least one version**, whatever the policy. The run resolves each input's
+latest version, and a source that has been registered but never notified has none — the task would
+fail with `No versions exist for this data ID`. So a flow whose inputs are not all populated yet
+simply does not run, and starts running once they are.
+
+**Then the policy decides how many must be new.** `ANY` fires when at least one input has a version
+newer than the flow's `last_executed`; `ALL` only when every one of them does. Before the first run
+there is no `last_executed`, so everything counts as new — but the requirement above still holds,
+which is what stops `ALL` from firing on the first update to a single input.
+
+With inputs that already have data, registration therefore runs the flow once immediately. Two
+things delay that, and neither is a failure:
+
+- an input with **no versions yet** — it runs when they all have some;
+- a **no-copy** input — the registration run is skipped outright, because outside a notify there is
+  no signed URL to read the object with, so the first notify becomes the first run.
+
+Either way a freshly registered flow can sit at `last_executed: null` for a while.
 
 ### Already exists?
 
