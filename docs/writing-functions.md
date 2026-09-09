@@ -248,6 +248,12 @@ def traffic_to_csv(output, bin_freq="1min", db_dsn=None):
 Omit `--verifier` and AERO registers a passthrough that stores the file unchanged. **No-copy sources
 have no ingestion function at all** — nothing is pulled, so there is nothing to transform.
 
+The file and the flow kwargs are all an ingestion function gets: the `_url`, `_signed_url`,
+`_version` and `_version_id` extras above are analysis-only. They are staged from a flow's
+`input_data`, and an ingestion flow has none — the source is its *output*. The version is not
+available even in principle, since it is the run itself that creates it, after the function
+returns.
+
 ## Registering
 
 `register_function` from `aero_client.utils` wraps your function in the AERO wrapper and registers
