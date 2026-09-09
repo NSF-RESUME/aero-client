@@ -153,6 +153,25 @@ def analyse(lhs_input, lhs_input_url):
 `<name>_signed_url` is also available — the presigned URL the fetch used, when there was one. It is
 transient and only present on a notify-triggered run; prefer `<name>_url` for anything you record.
 
+## Knowing which version an input is
+
+`<name>_version` and `<name>_version_id` are opt-in the same way, and unlike the url extras they
+apply to *every* input, whatever the copy mode — a copied input has a version just as a no-copy one
+does. `<name>_version` is the ordinal AERO counts up from 1; `<name>_version_id` is the version's
+UUID, the thing to record when you want to name the exact revision you consumed:
+
+```python
+def analyse(lhs_input, lhs_input_version, lhs_input_version_id):
+    # lhs_input_version     -> 7
+    # lhs_input_version_id  -> "4af0e417-0527-43c8-99e7-22cfd88ef951"
+    out = f"summary-v{lhs_input_version}.csv"
+    ...
+```
+
+Ask for either one alone if that is all you need. With several inputs, each gets its own pair —
+`lhs_input_version`, `rhs_input_version`, and so on — so a function under an `all` policy can record
+the full set of revisions it ran against, not just the one that fired the run.
+
 ## Accepting a path or a URL
 
 A function that also runs by hand is easier to test. `pandas` reads URLs directly, so accepting

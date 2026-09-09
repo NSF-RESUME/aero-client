@@ -273,7 +273,7 @@ description: LHS results CSV summary
 input_data:
   lhs_input:                   # must match your function's parameter name
     id: 6f76e7b5-0f1d-4b4d-9769-e8b85dca5266   # the data id from `aero create`
-    version: null              # null = always the latest
+    version: null              # must be null; see the key list below
     # fetch: false             # optional; see "Fetching an input yourself" below
 
 output_data:
@@ -295,6 +295,12 @@ Accepted keys: `endpoint_uuid`, `function_uuid`, `description`, `policy`, `input
 Each **`input_data` entry** accepts `id` (required), `version`, and
 [`fetch`](#fetching-an-input-yourself). Each **`output_data` entry** accepts `collection_uuid` and
 `collection_url`.
+
+`version` must be `null`: every run resolves the input's latest version. Pinning an input to a
+particular version is not implemented — give it an integer and the run fails on the worker rather
+than at registration, because the entry is skipped by the step that resolves where the bytes live.
+A function can *see* which version it got: declare `<name>_version` or `<name>_version_id`, as in
+[writing functions](writing-functions.md#knowing-which-version-an-input-is).
 
 ### Fetching an input yourself
 
