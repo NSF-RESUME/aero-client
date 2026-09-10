@@ -362,6 +362,12 @@ def aero_format(fn: callable):
                 if "tmp_dir" not in val:
                     val["tmp_dir"] = "/tmp"
 
+                # Which revision this input is, whatever the copy mode -- staged
+                # before the branches below so a plain collection input gets it
+                # too. Opt-in by parameter name, like the urls.
+                extra_in[f"{name}_version"] = val.get("version")
+                extra_in[f"{name}_version_id"] = val.get("version_id")
+
                 trigger_url = val.get("trigger_url")
 
                 if val.get("fetch") is False:

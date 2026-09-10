@@ -251,6 +251,9 @@ def get_versions(*function_params) -> tuple:
                 assert response.status_code == 200, response.content
                 latest = response.json()
                 md["version"] = latest["version"]
+                # The DataVersion uuid, for a function that wants to name the
+                # exact revision it consumed rather than the ordinal.
+                md["version_id"] = latest["id"]
                 md["file_bn"] = latest["data_file"]["file_name"]
                 md["encoding"] = latest["data_file"]["encoding"]
 
